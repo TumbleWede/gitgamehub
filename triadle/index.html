@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Triadle</title>
+		<meta name="description" content="A wordle game where you need to solve 3 words in the shape of a triangle.">
+		<meta name="keywords" content="wordle, dordle, tridle, quordle, octordle, word, game, squardle, triadle, puzzle, quandale dingle">
+		<link rel="icon" href="icon.png"/>
+		<style>
+			:root {
+				--green: #6aaa64;
+				--dark-green: #538d4e;
+				--yellow: #c9b458;
+				--dark-yellow: #b59f3b;
+				--red: #f53a3a;
+				--dark-red: #ce2b2b;
+				--gray-1: #d3d6da;
+				--gray-2: #818384;
+				--gray-3: #787c7e;
+				--gray-4: #3a3a3c;
+				--gray-5: #121213;
+
+				--correct: var(--dark-green);
+				--present: var(--dark-yellow);
+				--nearby: var(--dark-red);
+				--absent: var(--gray-4);
+				--unknown: var(--gray-2);
+				--bg: var(--gray-5);
+			}
+
+			* {
+				margin: 0;
+				padding: 0;
+			}
+
+			html, body {
+				background: var(--bg);
+				color: white;
+				font-family:Arial, Helvetica, sans-serif;
+				height: 100%;
+			}
+
+			header {
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+				border-bottom: 1px solid;
+				width: 100%;
+				height: 50px;
+				justify-content: center;
+			}
+
+			#title {
+				font-family: inherit;
+				font-weight: bold;
+				font-size: 40px;
+				text-align: center;
+			}
+
+			.history {
+				font-size: 4px;
+			}
+
+			path {
+				stroke: var(--bg);
+			}
+
+			text {
+				fill: white;
+				text-anchor: middle;
+				dominant-baseline: central;
+				font-size: 8px;
+			}
+
+			.unknown {
+				fill: var(--unknown);
+				background-color: var(--unknown);
+			}
+
+			.absent {
+				fill: var(--absent);
+				background-color: var(--absent);
+			}
+
+			.nearby {
+				fill: var(--nearby);
+				background-color: var(--nearby);
+			}
+
+			.present {
+				fill: var(--present);
+				background-color: var(--present);
+			}
+
+			.correct {
+				fill: var(--correct);
+				background-color: var(--correct);
+			}
+
+			#container {
+				margin: auto;
+				max-width: 500px;
+				height: 100%;
+				min-height: 100%;
+				display: flex;
+				align-items: center;
+				flex-direction: column;
+			}
+
+			#game {
+				flex: 1;
+			}
+
+			#keyboard {
+				margin: 0 8px;
+				width: 100%;
+				max-width: 484px;
+				flex-direction: column;
+			}
+
+			.row {
+				display: flex;
+				justify-content: center;
+				width: 100%;
+				margin: 0 auto 6px;
+				text-align: center;
+				user-select: none;
+				touch-action: manipulation;
+			}
+
+			.key {
+				font-weight: bold;
+				color: var(--white);
+				border: 0;
+				border-radius: 4px;
+				font-size: 13px;
+				height: 58px;
+				margin: 0px;
+				padding: 0;
+				cursor: pointer;
+				flex: 1;
+				margin-right: 6px;
+				text-transform: uppercase;
+			}
+
+			.key:last-of-type {
+				margin: 0;
+			}
+
+			.history-text {
+				text-anchor: middle;
+				dominant-baseline: central;
+				font-size: 4px;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="container">
+			<header height="40px">
+				<h1 id="title">Triadle</h1>
+			</header>
+			<svg id="game" width="450" height="390" viewbox="0 0 90 78">
+				<g>
+					<path class="unknown" id="w0p0" d="M 15 0 L 0 26 L 30 26 Z"></path>
+					<path class="unknown" id="w0p1" d="M 15 0 L 30 26 L 45 0 Z"></path>
+					<path class="unknown" id="w0p2" d="M 45 0 L 30 26 L 60 26 Z"></path>
+					<path class="unknown" id="w0p3" d="M 45 0 L 60 26 L 75 0 Z"></path>
+					<path class="unknown" id="w0p4" d="M 75 0 L 60 26 L 90 26 Z"></path>
+
+					<path class="unknown" id="w1p1" d="M 0 26 L 15 52 L 30 26 Z"></path>
+					<path class="unknown" id="w1p2" d="M 30 26 L 15 52 L 45 52 Z"></path>
+					<path class="unknown" id="w1p3" d="M 15 52 L 30 78 L 45 52 Z"></path>
+					<path class="unknown" id="w1p4" d="M 45 52 L 30 78 L 60 78 Z"></path>
+
+					<path class="unknown" id="w2p1" d="M 45 52 L 60 78 L 75 52 Z"></path>
+					<path class="unknown" id="w2p2" d="M 60 26 L 45 52 L 75 52 Z"></path>
+					<path class="unknown" id="w2p3" d="M 60 26 L 75 52 L 90 26 Z"></path>
+				</g>
+				<g id="history"></g>
+				<g>
+					<text class="input" id="w0t0" x="15" y="17.333"></text>
+					<text class="input flipped" id="w0t1" x="30" y="8.667"></text>
+					<text class="input" id="w0t2" x="45" y="17.333"></text>
+					<text class="input flipped" id="w0t3" x="60" y="8.667"></text>
+					<text class="input" id="w0t4" x="75" y="17.333"></text>
+	
+					<text class="input flipped" id="w1t1" x="15" y="34.667"></text>
+					<text class="input" id="w1t2" x="30" y="43.333"></text>
+					<text class="input flipped" id="w1t3" x="30" y="60.667"></text>
+					<text class="input" id="w1t4" x="45" y="69.333"></text>
+
+					<text class="input flipped" id="w2t1" x="60" y="60.667"></text>
+					<text class="input" id="w2t2" x="60" y="43.3"></text>
+					<text class="input flipped" id="w2t3" x="75" y="34.667"></text>
+				</g>
+			</svg>
+			<div id="keyboard">
+				<div class="row">
+					<button class="key unknown" id="KeyQ">Q</button>
+					<button class="key unknown" id="KeyW">W</button>
+					<button class="key unknown" id="KeyE">E</button>
+					<button class="key unknown" id="KeyR">R</button>
+					<button class="key unknown" id="KeyT">T</button>
+					<button class="key unknown" id="KeyY">Y</button>
+					<button class="key unknown" id="KeyU">U</button>
+					<button class="key unknown" id="KeyI">I</button>
+					<button class="key unknown" id="KeyO">O</button>
+					<button class="key unknown" id="KeyP">P</button>
+				</div>
+				<div class="row">
+					<div style="flex: 0.5;"></div>
+					<button class="key unknown" id="KeyA">A</button>
+					<button class="key unknown" id="KeyS">S</button>
+					<button class="key unknown" id="KeyD">D</button>
+					<button class="key unknown" id="KeyF">F</button>
+					<button class="key unknown" id="KeyG">G</button>
+					<button class="key unknown" id="KeyH">H</button>
+					<button class="key unknown" id="KeyJ">J</button>
+					<button class="key unknown" id="KeyK">K</button>
+					<button class="key unknown" id="KeyL">L</button>
+					<div style="flex: 0.5;"></div>
+				</div>
+				<div class="row">
+					<button class="key unknown" style="flex: 1.5;" id="Enter">Enter</button>
+					<button class="key unknown" id="KeyZ">Z</button>
+					<button class="key unknown" id="KeyX">X</button>
+					<button class="key unknown" id="KeyC">C</button>
+					<button class="key unknown" id="KeyV">V</button>
+					<button class="key unknown" id="KeyB">B</button>
+					<button class="key unknown" id="KeyN">N</button>
+					<button class="key unknown" id="KeyM">M</button>
+					<button class="key unknown" style="flex: 1.5; font-size: 20px" id="Backspace">&#9003</button>
+				</div>
+			</div>
+		</div>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+		<script>
+			const game = document.getElementById("game");
+			$.getJSON("words.json", function(data) {
+				words = data;
+				chooseWords();
+			});
+			let currentWord = 0;
+			let inputs = "";
+			let letterInfo = {correct: [[], [], []], present: [[], [], []], nearby: [], absent: []};
+			let solved = [false, false, false];
+			let letterHistory = [[[], [], [], [], []], [[], [], [], [], []], [[], [], [], [], []]] // letterHistory[int word][int letter] -> [str letter, str result]
+			let canType = false;
+			const historyOrder = {
+				normal: [
+					{x: 0, y: -11.222, path: [0, -17, -5, -8.333, 5, -8.333]},
+					{x: -10, y: 6.111, path: [-15, 9, -5, 9, -10, 0.333]},
+					{x: 10, y: 6.111, path: [15, 9, 5, 9, 10, 0.333]},
+					{x: 0, y: 6.111, path: [-5, 9, 5, 9, 0, 0.333]},
+					{x: -5, y: -2.555, path: [-5, -8.333, -10, 0.333, 0, 0.333]},
+					{x: 5, y: -2.555, path: [5, -8.333, 10, 0.333, 0, 0.333]},
+				],
+				flipped: [
+					{x: 0, y: 12.222, path: [0, 18, -5, 9.333, 5, 9.333]},
+					{x: -10, y: -5.444, path: [-15, -8, -10, 0.667, -5, -8]},
+					{x: 10, y: -5.444, path: [15, -8, 10, 0.667, 5, -8]},
+				]
+			};
+
+			function getRandomInt(max) {
+				return Math.floor(Math.random() * max);
+			}
+
+			function chooseWords() {
+				let count = 0;
+
+				while (count < 100) {
+					count++;
+					let usedWords = [...words.used];
+					let word1 = usedWords[getRandomInt(usedWords.length - 1)];
+					usedWords.splice(usedWords.indexOf(word1), 1);
+
+					for (let i = usedWords.length - 1; i >= 0; i--) {
+						if (word1.charAt(0) != usedWords[i].charAt(0)) {
+							usedWords.splice(i, 1);
+						}
+					}
+
+					let word2 = usedWords[getRandomInt(usedWords.length - 1)];
+					usedWords = [...words.used];
+					usedWords.splice(usedWords.indexOf(word1), 1);
+					usedWords.splice(usedWords.indexOf(word2), 1);
+
+					for (let i = usedWords.length - 1; i >= 0; i--) {
+						if (word2.charAt(4) != usedWords[i].charAt(0) || word1.charAt(4) != usedWords[i].charAt(4)) {
+							usedWords.splice(i, 1);
+						}
+					}
+
+					let word3 = usedWords[getRandomInt(usedWords.length - 1)];
+					
+					if (word3 != undefined) {
+						answers = [word1, word2, word3];
+						canType = true;
+						return;
+					}
+				}
+			}
+
+			function getTriangle(word, position) {
+				if (word == 1 && position == 0) {
+					return {path: document.getElementById("w0p0"), text: document.getElementById("w0t0"), word: 0, pos: 0};
+				} else if (word == 2 && position == 0) {
+					return {path: document.getElementById("w1p4"), text: document.getElementById("w1t4"), word: 1, pos: 4};
+				} else if (word == 2 && position == 4) {
+					return {path: document.getElementById("w0p4"), text: document.getElementById("w0t4"), word: 0, pos: 4};
+				}
+
+				return {path: document.getElementById(`w${word}p${position}`), text: document.getElementById(`w${word}t${position}`), word: word, pos: position};
+			}
+
+			function updateLetters() {
+				for (let i = 0; i < 5; i++) {
+					let triangle = getTriangle(currentWord, i);
+					triangle.text.innerHTML = (inputs[i] ? inputs[i].toUpperCase() : "");
+					
+					if (inputs.length == 5 && !isValid()) {
+						triangle.text.style.fill = "#ff0000";
+					} else {
+						triangle.text.removeAttribute("style");
+					}
+				}
+			}
+
+			function addTextToSVG(text, x, y) {
+				const svgNS = "http://www.w3.org/2000/svg";
+				const newText = document.createElementNS(svgNS, "text");
+				newText.setAttributeNS(null, "x", x);
+				newText.setAttributeNS(null, "y", y);
+				$(newText).addClass("history-text");
+
+				const node = document.createTextNode(text);
+				newText.appendChild(node);
+				document.getElementById("history").appendChild(newText);
+				return newText
+			}
+
+			function toPath(path, x, y, flipped) {
+				return "M " + (path[0] + x) + " " + (path[1] + y) + " L " + (path[2] + x) + " " + (path[3] + y) + " L " + (path[4] + x) + " " + (path[5] + y) + " Z" ;
+			}
+
+			function addPathToSVG(path, color) {
+				const svgNS = "http://www.w3.org/2000/svg";
+				const newPath = document.createElementNS(svgNS, "path");
+				newPath.setAttributeNS(null, "d", path);
+				$(newPath).addClass("history-path").addClass(color);
+				document.getElementById("history").appendChild(newPath);
+				return newPath
+			}
+
+			function removeTextHistory() {
+				let textClass = document.getElementsByClassName("history-text");
+				let pathClass = document.getElementsByClassName("history-path");
+
+				for (let i = textClass.length - 1; i >= 0; i--) {
+					textClass[i].remove();
+					pathClass[i].remove();
+				}
+			}
+
+			function updateTextHistory() {
+				removeTextHistory();
+				
+				for (let word = 0; word < 3; word++) {
+					for (let letter = 0; letter < 5; letter++) {
+						if (word == 1 && letter == 0) {continue;} else if (word == 2 && letter == 0) {continue;} else if (word == 2 && letter == 4) {continue;}
+						let triangle = getTriangle(word, letter);
+						let history = letterHistory[word][letter];
+
+						for (let i = 0; i < history.length; i++) {
+							if (triangle.text.classList.contains("flipped")) {
+								addPathToSVG(toPath(historyOrder.flipped[i].path, parseInt(triangle.text.getAttribute("x")), parseInt(triangle.text.getAttribute("y"))), history[i][1]);
+								addTextToSVG(history[i][0].toUpperCase(), parseInt(triangle.text.getAttribute("x")) + historyOrder.flipped[i].x, parseInt(triangle.text.getAttribute("y")) + historyOrder.flipped[i].y);
+							} else {
+								addPathToSVG(toPath(historyOrder.normal[i].path, parseInt(triangle.text.getAttribute("x")), parseInt(triangle.text.getAttribute("y"))), history[i][1]);
+								addTextToSVG(history[i][0].toUpperCase(), parseInt(triangle.text.getAttribute("x")) + historyOrder.normal[i].x, parseInt(triangle.text.getAttribute("y")) + historyOrder.normal[i].y);
+							}
+						}
+					}
+				}
+			}
+
+			function isValid() {
+				return (words.used.includes(inputs) || words.unused.includes(inputs));
+			}
+
+			function updateKeyboard() {
+				let keys = document.getElementsByClassName("key");
+
+				for (let i = 0; i < keys.length; i++) {
+					if (!keys[i].id.includes("Key")) {continue;}
+					if (letterInfo.correct[currentWord].includes(keys[i].innerHTML.toLowerCase())) {
+						$(keys[i]).removeClass().addClass("key correct");
+					} else if (letterInfo.present[currentWord].includes(keys[i].innerHTML.toLowerCase())) {
+						$(keys[i]).removeClass().addClass("key present");
+					} else if (letterInfo.nearby.includes(keys[i].innerHTML.toLowerCase())) {
+						$(keys[i]).removeClass().addClass("key nearby");
+					} else if (letterInfo.absent.includes(keys[i].innerHTML.toLowerCase())) {
+						$(keys[i]).removeClass().addClass("key absent");
+					} else {
+						$(keys[i]).removeClass().addClass("key unknown");
+					}
+				}
+			}
+
+			function count(str, char) {
+				return str.split(char).length - 1;
+			}
+
+			function nearby(letter) {
+				let nearbyWords = [];
+
+				for (let word = 0; word < 3; word++) {
+					if (currentWord == word) {continue;}
+					if (answers[word].includes(letter)) {
+						nearbyWords.push(word);
+					}
+				}
+
+				return nearbyWords;
+			}
+
+			function replace(array, value) {
+				if (array.includes(value)) {array.splice(array.indexOf(value), 1); console.log(array);}
+				array.push(value);
+			}
+
+			function keydown(key, code) {
+				if (!canType) {return;}
+				if (code.includes("Key") && inputs.length < 5) {
+					inputs += key.toLowerCase();
+				} else if (code == "Backspace") {
+					inputs = inputs.slice(0, -1);
+				} else if (code == "Enter") {
+					if (inputs.length == 5 && isValid()) {
+						let presentIndex = 1;
+						let nearbyIndex = 1;
+						canType = false;
+						removeTextHistory();
+
+						for (let i = 0; i < 5; i++) {
+							let triangle = getTriangle(currentWord, i);
+							let history = letterHistory[triangle.word][triangle.pos];
+							let near = nearby(inputs[i]);
+							
+							if (answers[currentWord].charAt(i) == inputs.charAt(i)) { 
+								replace(letterInfo.correct[currentWord], inputs.charAt(i));
+								replace(history, [inputs.charAt(i), "correct"]);
+								$(triangle.path).removeClass().addClass("correct");
+							} else if (answers[currentWord].includes(inputs[i]) && presentIndex <= count(answers[currentWord], inputs[i])) {
+								presentIndex++;
+								replace(letterInfo.present[currentWord], inputs.charAt(i));
+								replace(history, [inputs.charAt(i), "present"]);
+								$(triangle.path).removeClass().addClass("present");
+							} else if (near.length > 0 && nearbyIndex <= near.length) {
+								nearbyIndex++;
+								replace(letterInfo.nearby, inputs.charAt(i));
+								replace(history, [inputs.charAt(i), "nearby"]);
+								$(triangle.path).removeClass().addClass("nearby");
+							} else {
+								replace(letterInfo.absent, inputs.charAt(i));
+								replace(history, [inputs.charAt(i), "absent"]);
+								$(triangle.path).removeClass().addClass("absent");
+							}
+						}
+
+						if (inputs == answers[currentWord]) {solved[currentWord] = true;}
+
+						setTimeout(() => {
+							inputs = "";
+							updateLetters();
+							updateTextHistory();
+							for (let i = 0; i < 5; i++) {$(getTriangle(currentWord, i).path).removeClass().addClass("unknown");}
+							currentWord = (currentWord + 1) % 3;
+							while (solved[currentWord]) {currentWord = (currentWord + 1) % 3;}
+							updateKeyboard();
+							canType = true;
+						}, 1500);
+					}
+				}
+				updateLetters();
+			}
+
+			document.addEventListener("keydown", (event) => {
+				keydown(event.key, event.code);
+			}, false);
+
+			let keys = document.getElementsByClassName("key");
+
+			for (let i = 0; i < keys.length; i++) {
+				keys[i].onclick = ({target}) => {
+					keydown(target.innerHTML, target.id);
+				};
+			}
+		</script>
+	</body>
+</html>

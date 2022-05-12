@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Pong</title>
+		<style>
+			body {
+				background: rgb(32, 32, 32);
+			}
+
+			h1 {
+				color: white;
+				font-family: monospace;
+				font-size: 30px;
+				text-align: center;
+			}
+
+			canvas {
+				background: black;
+				width: 90%;
+				display: block;
+				margin: 0 auto;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>Pong</h1>
+		<canvas id="canvas"></canvas>
+		<script>
+			let canvas = document.getElementById("canvas");
+			let ctx = canvas.getContext("2d");
+
+			canvas.width = 858;
+			canvas.height = 525;
+
+			class Player {
+				constructor(x, y) {
+					x = x,
+					y = y
+				}
+			}
+
+			function renderPlayer() {
+				for (let i = 0; i < players.length; i++) {
+					ctx.fillStyle = "white";
+				}
+			}
+
+			let players = [new Player(30, 263), new Player(828, 263)];
+		</script>
+	</body>
+</html>
