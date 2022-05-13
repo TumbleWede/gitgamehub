@@ -33,11 +33,14 @@
 			let ctx = canvas.getContext("2d");
 			let lastUpdate = Date.now(); // For deltaTime
 
+			canvas.width = 1716;
+			canvas.height = 1050;
+
 			const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
 			const PLAYER_WIDTH = 20;
-			const PLAYER_HEIGHT = 120;
-			const PLAYER_SPEED = 5; // In pixels
-			const ASPECT_RATIO = 16 / 9;
+			const PLAYER_HEIGHT = 80;
+			const PLAYER_SPEED = 10;
+			const ASPECT_RATIO = canvas.width / canvas.height;
 			const NUMBERS = [
 				[
 					[1, 1, 1, 1],
@@ -141,9 +144,6 @@
 				],
 			]
 			
-			canvas.width = 1600;
-			canvas.height = 900;
-
 			class Player {
 				constructor(x, y) {
 					this.x = x,
@@ -151,6 +151,13 @@
 					this.dir = 0,
 					this.up = false,
 					this.down = false
+				}
+			}
+
+			class Vector2 {
+				constructor(x, y) {
+					this.x = x,
+					this.y = y
 				}
 			}
 
@@ -164,28 +171,53 @@
 				}
 			}
 
+			function randomInt(max) {
+				return Math.floor(Math.random() * max);
+			}
+
 			updateWindow(); // Update the window on start
 			window.onresize = updateWindow;
 			let players = [new Player(60, canvas.height / 2), new Player(canvas.width - 60, canvas.height / 2)];
-			let ball = {}
+			let ball = {x: canvas.width / 2, y: randomInt(canvas.height), dir: new Vector2(0, 0)};
 
-			function renderScore(x, y) {
+			function renderScore(x, y, score) {
+				score = String(score).split("").map(str => Number(str)); // 1234 -> [1, 2, 3, 4]
 
 			}
 
 			function render() {
-				ctx.clearRect(0, 0, canvas.width, canvas.height)
+				ctx.clearRect(0, 0, canvas.width, canvas.height) // Clear canvas
 				ctx.fillStyle = "white";
+				ctx.strokeStyle = "white";
+
+				// Draw dashed line
+				ctx.lineWidth = 4;
+				ctx.beginPath();
+				ctx.setLineDash([17, 15]);
+				ctx.moveTo(canvas.width / 2, 0);
+				ctx.lineTo(canvas.width / 2, canvas.height);
+				ctx.stroke();
+
 				// Render players
 				for (let i = 0; i < players.length; i++) {ctx.fillRect(players[i].x - PLAYER_WIDTH / 2, players[i].y - PLAYER_HEIGHT / 2, PLAYER_WIDTH, PLAYER_HEIGHT);}
 			}
 
 			function update() {
-				for (let i = 0; i < players.length; i++) { // Player movement
+				// Update deltaTime
+				let now = Date.now();
+				let deltaTime = (now - lastUpdate) / 1000;
+				lastUpdate = now;
+				
+				// Update player movement
+				for (let i = 0; i < players.length; i++) {
 					players[i].dir = 0
-					if (players[i].up) {players[i].dir--;} if (players[i].down) {players[i].dir++;}
-					players[i].y = clamp(players[i].y + PLAYER_SPEED * players[i].dir, PLAYER_HEIGHT / 2, canvas.height - PLAYER_HEIGHT / 2);
+					if (players[i].up) {players[i].dir--;}
+					if (players[i].down) {players[i].dir++;}
+					players[i].y = clamp(players[i].y + PLAYER_SPEED * players[i].dir * deltaTime * 60, PLAYER_HEIGHT / 2, canvas.height - PLAYER_HEIGHT / 2);
 				}
+
+				
+
 				render();
 			}
 
