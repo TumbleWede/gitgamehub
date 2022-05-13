@@ -3,8 +3,9 @@
 	<head>
 		<title>Pong</title>
 		<style>
-			body {
-				background: rgb(32, 32, 32);
+			body, html {
+				margin: 0;
+				padding: 0;
 			}
 
 			h1 {
@@ -16,36 +17,203 @@
 
 			canvas {
 				background: black;
-				width: 90%;
-				display: block;
-				margin: 0 auto;
+				position: absolute;
+				margin: auto;
+				left: 0;
+				right: 0;
+				top: 0;
+				bottom: 0;
 			}
 		</style>
 	</head>
 	<body>
-		<h1>Pong</h1>
 		<canvas id="canvas"></canvas>
 		<script>
 			let canvas = document.getElementById("canvas");
 			let ctx = canvas.getContext("2d");
+			let lastUpdate = Date.now(); // For deltaTime
 
-			canvas.width = 858;
-			canvas.height = 525;
+			const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
+			const PLAYER_WIDTH = 20;
+			const PLAYER_HEIGHT = 120;
+			const PLAYER_SPEED = 5; // In pixels
+			const ASPECT_RATIO = 16 / 9;
+			const NUMBERS = [
+				[
+					[1, 1, 1, 1],
+					[1, 0, 0, 1],
+					[1, 0, 0, 1],
+					[1, 0, 0, 1],
+					[1, 0, 0, 1],
+					[1, 0, 0, 1],
+					[1, 0, 0, 1],
+					[1, 1, 1, 1]
+				],
+				[
+					[0, 0, 0, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1]
+				],
+				[
+					[1, 1, 1, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1],
+					[1, 1, 1, 1],
+					[1, 0, 0, 0],
+					[1, 0, 0, 0],
+					[1, 0, 0, 0],
+					[1, 1, 1, 1]
+				],
+				[
+					[1, 1, 1, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1],
+					[1, 1, 1, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1],
+					[1, 1, 1, 1]
+				],
+				[
+					[1, 0, 0, 1],
+					[1, 0, 0, 1],
+					[1, 0, 0, 1],
+					[1, 1, 1, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1]
+				],
+				[
+					[1, 1, 1, 1],
+					[1, 0, 0, 0],
+					[1, 0, 0, 0],
+					[1, 1, 1, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1],
+					[1, 1, 1, 1]
+				],
+				[
+					[1, 0, 0, 0],
+					[1, 0, 0, 0],
+					[1, 0, 0, 0],
+					[1, 1, 1, 1],
+					[1, 0, 0, 1],
+					[1, 0, 0, 1],
+					[1, 0, 0, 1],
+					[1, 1, 1, 1]
+				],
+				[
+					[1, 1, 1, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1]
+				],
+				[
+					[1, 1, 1, 1],
+					[1, 0, 0, 1],
+					[1, 0, 0, 1],
+					[1, 1, 1, 1],
+					[1, 0, 0, 1],
+					[1, 0, 0, 1],
+					[1, 0, 0, 1],
+					[1, 1, 1, 1]
+				],
+				[
+					[1, 1, 1, 1],
+					[1, 0, 0, 1],
+					[1, 0, 0, 1],
+					[1, 1, 1, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1],
+					[0, 0, 0, 1]
+				],
+			]
+			
+			canvas.width = 1600;
+			canvas.height = 900;
 
 			class Player {
 				constructor(x, y) {
-					x = x,
-					y = y
+					this.x = x,
+					this.y = y,
+					this.dir = 0,
+					this.up = false,
+					this.down = false
 				}
 			}
 
-			function renderPlayer() {
-				for (let i = 0; i < players.length; i++) {
-					ctx.fillStyle = "white";
+			function updateWindow() {
+				if (window.innerWidth / window.innerHeight < ASPECT_RATIO) {
+					canvas.style.width = "100%";
+					canvas.style.height = null;
+				} else {
+					canvas.style.width = null;
+					canvas.style.height = "100%";
 				}
 			}
 
-			let players = [new Player(30, 263), new Player(828, 263)];
+			updateWindow(); // Update the window on start
+			window.onresize = updateWindow;
+			let players = [new Player(60, canvas.height / 2), new Player(canvas.width - 60, canvas.height / 2)];
+			let ball = {}
+
+			function renderScore(x, y) {
+
+			}
+
+			function render() {
+				ctx.clearRect(0, 0, canvas.width, canvas.height)
+				ctx.fillStyle = "white";
+				// Render players
+				for (let i = 0; i < players.length; i++) {ctx.fillRect(players[i].x - PLAYER_WIDTH / 2, players[i].y - PLAYER_HEIGHT / 2, PLAYER_WIDTH, PLAYER_HEIGHT);}
+			}
+
+			function update() {
+				for (let i = 0; i < players.length; i++) { // Player movement
+					players[i].dir = 0
+					if (players[i].up) {players[i].dir--;} if (players[i].down) {players[i].dir++;}
+					players[i].y = clamp(players[i].y + PLAYER_SPEED * players[i].dir, PLAYER_HEIGHT / 2, canvas.height - PLAYER_HEIGHT / 2);
+				}
+				render();
+			}
+
+			document.addEventListener("keydown", (event) => {
+				if (event.code == "KeyW") {
+					players[0].up = true;
+				} else if (event.code == "KeyS") {
+					players[0].down = true;
+				} else if (event.code == "ArrowUp") {
+					players[1].up = true;
+				} else if (event.code == "ArrowDown") {
+					players[1].down = true;
+				}
+			});
+
+			document.addEventListener("keyup", (event) => {
+				if (event.code == "KeyW") {
+					players[0].up = false;
+				} else if (event.code == "KeyS") {
+					players[0].down = false;
+				} else if (event.code == "ArrowUp") {
+					players[1].up = false;
+				} else if (event.code == "ArrowDown") {
+					players[1].down = false;
+				}
+			});
+
+			setInterval(update);
 		</script>
 	</body>
 </html>
