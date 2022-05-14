@@ -32,14 +32,27 @@
 			let canvas = document.getElementById("canvas");
 			let ctx = canvas.getContext("2d");
 			let lastUpdate = Date.now(); // For deltaTime
+			let running = false;
+			let showText = true;
 
 			canvas.width = 1716;
 			canvas.height = 1050;
 
 			const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
+			const randomInt = (max) => Math.floor(Math.random() * max);
+			const randomSign = () => Math.random() > 0.5 ? 1 : -1;
+
+			const audio = {
+				bounce: new Audio("bounce.mp3"),
+				bounce_paddle: new Audio("bounce_paddle.mp3"),
+				score: new Audio("score.mp3")
+			};
+
 			const PLAYER_WIDTH = 20;
 			const PLAYER_HEIGHT = 80;
-			const PLAYER_SPEED = 10;
+			const PLAYER_SPEED = 15;
+			const PIXEL_SIZE = 20;
+			const BALL_SPEED = 10;
 			const ASPECT_RATIO = canvas.width / canvas.height;
 			const NUMBERS = [
 				[
@@ -145,7 +158,9 @@
 			]
 			
 			class Player {
-				constructor(x, y) {
+				constructor(x = 0, y = 0, sign = 1) {
+					this.score = 0,
+					this.sign = sign,
 					this.x = x,
 					this.y = y,
 					this.dir = 0,
@@ -155,7 +170,7 @@
 			}
 
 			class Vector2 {
-				constructor(x, y) {
+				constructor(x = 0, y = 0) {
 					this.x = x,
 					this.y = y
 				}
@@ -171,35 +186,50 @@
 				}
 			}
 
-			function randomInt(max) {
-				return Math.floor(Math.random() * max);
-			}
-
 			updateWindow(); // Update the window on start
 			window.onresize = updateWindow;
-			let players = [new Player(60, canvas.height / 2), new Player(canvas.width - 60, canvas.height / 2)];
-			let ball = {x: canvas.width / 2, y: randomInt(canvas.height), dir: new Vector2(0, 0)};
-
-			function renderScore(x, y, score) {
-				score = String(score).split("").map(str => Number(str)); // 1234 -> [1, 2, 3, 4]
-
-			}
+			let players = [new Player(200, canvas.height / 2, -1), new Player(canvas.width - 200, canvas.height / 2)];
+			let ball = {x: canvas.width / 2, y: randomInt(canvas.height), dir: new Vector2(randomSign(), randomSign())};
 
 			function render() {
-				ctx.clearRect(0, 0, canvas.width, canvas.height) // Clear canvas
+				ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
 				ctx.fillStyle = "white";
 				ctx.strokeStyle = "white";
 
 				// Draw dashed line
 				ctx.lineWidth = 4;
 				ctx.beginPath();
-				ctx.setLineDash([17, 15]);
+				ctx.setLineDash([17, 17]);
 				ctx.moveTo(canvas.width / 2, 0);
 				ctx.lineTo(canvas.width / 2, canvas.height);
 				ctx.stroke();
-
+				
 				// Render players
-				for (let i = 0; i < players.length; i++) {ctx.fillRect(players[i].x - PLAYER_WIDTH / 2, players[i].y - PLAYER_HEIGHT / 2, PLAYER_WIDTH, PLAYER_HEIGHT);}
+				for (let i = 0; i < players.length; i++) {
+					ctx.fillRect(players[i].x - PLAYER_WIDTH / 2, players[i].y - PLAYER_HEIGHT / 2, PLAYER_WIDTH, PLAYER_HEIGHT);
+
+					// Render score
+					let score = String(players[i].score).split("").map(str => Number(str)).reverse(); // 1234 -> [4, 3, 2, 1]
+
+					for (let j = 0; j < score.length; j++) {
+						for (let y = 0; y < NUMBERS[score[j]].length; y++) {
+							for (let x = 0; x < NUMBERS[score[j]][y].length; x++) {
+								if (NUMBERS[score[j]][y][x] == 0) {continue;}
+								ctx.fillRect(canvas.width / 2 + canvas.width / 4 * players[i].sign + (x + 6 - j * NUMBERS[score[j]].length - NUMBERS[score[j]].length / 2) * PIXEL_SIZE, (y + 4) * PIXEL_SIZE, PIXEL_SIZE , PIXEL_SIZE);
+							}
+						}
+					}
+				}
+
+				// Tutorial
+				if (showText) {
+					ctx.font = "48px monospace";
+					ctx.textAlign = "center";
+					ctx.fillText("W, S, Up, and Down to move. Space to serve.", canvas.width / 2, canvas.height / 2);
+				}
+
+				// Render ball
+				if (running) {ctx.fillRect(ball.x - PIXEL_SIZE / 2, ball.y - PIXEL_SIZE / 2, PIXEL_SIZE, PIXEL_SIZE);}
 			}
 
 			function update() {
@@ -207,16 +237,45 @@
 				let now = Date.now();
 				let deltaTime = (now - lastUpdate) / 1000;
 				lastUpdate = now;
+
+				// Bounce ball on edges
+				if (Math.abs(canvas.height / 2 - ball.y) > canvas.height / 2 - PIXEL_SIZE / 2) {
+					audio.bounce.play();
+					ball.dir.y = Math.sign(ball.dir.y * -1);
+					ball.y = clamp(ball.y, PIXEL_SIZE / 2, canvas.height - PIXEL_SIZE / 2);
+				}
 				
 				// Update player movement
 				for (let i = 0; i < players.length; i++) {
-					players[i].dir = 0
+					players[i].dir = 0;
 					if (players[i].up) {players[i].dir--;}
 					if (players[i].down) {players[i].dir++;}
 					players[i].y = clamp(players[i].y + PLAYER_SPEED * players[i].dir * deltaTime * 60, PLAYER_HEIGHT / 2, canvas.height - PLAYER_HEIGHT / 2);
+
+					// Bounce ball on paddle
+					if (Math.abs(players[i].x - ball.x) < (PIXEL_SIZE + PLAYER_WIDTH) / 2 && Math.abs(players[i].y - ball.y) < (PIXEL_SIZE + PLAYER_HEIGHT) / 2) {
+						audio.bounce_paddle.play();
+						ball.dir.x = -players[i].sign * (Math.abs(ball.dir.x) + 0.01);
+						ball.dir.y = clamp((ball.y - players[i].y) / PIXEL_SIZE, -1, 1);
+					}
 				}
 
+				// Update ball
+				if (running) {
+					ball.x += ball.dir.x * BALL_SPEED * deltaTime * 60;
+					ball.y += ball.dir.y * BALL_SPEED * deltaTime * 60;
+				}
 				
+				// Check for goals
+				if (Math.abs(canvas.width / 2 - ball.x) > (canvas.width + PIXEL_SIZE) / 2) {
+					audio.score.play();
+					ball.x = canvas.width / 2;
+					ball.y = randomInt(canvas.height);
+					ball.dir.x = Math.sign(ball.dir.x);
+					ball.dir.y = randomSign();
+					running = false;
+					players[ball.dir.x == -1 ? 1 : 0].score += 1;
+				}
 
 				render();
 			}
@@ -230,6 +289,9 @@
 					players[1].up = true;
 				} else if (event.code == "ArrowDown") {
 					players[1].down = true;
+				} else if (event.code == "Space") {
+					running = true;
+					showText = false;
 				}
 			});
 
