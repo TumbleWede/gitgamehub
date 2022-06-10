@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Tetruo</title>
+		<link rel="icon" href="images/favicon.png"/>
+		<style>
+			body {
+				background-image: url("images/background.png");
+				background-size: 100vh;
+				margin: 0;
+				padding: 0;
+			}
+
+			canvas {
+				position: absolute;
+				margin: auto;
+				left: 0;
+				right: 0;
+				top: 0;
+				bottom: 0;
+			}
+		</style>
+	</head>
+	<body>
+		<canvas id="canvas"></canvas>
+		<script>
+			let lastUpdate = Date.now();
+			let canvas = document.getElementById("canvas");
+			let ctx = canvas.getContext("2d");
+			canvas.width = 3000;
+			canvas.height = 1500;
+			updateWindow();
+			window.onresize = updateWindow;
+
+			function updateWindow() {
+				if (window.innerWidth / window.innerHeight < canvas.width / canvas.height) {
+					canvas.style.width = "100%";
+					canvas.style.height = null;
+				} else {
+					canvas.style.width = null;
+					canvas.style.height = "100%";
+				}
+			}
+
+			class Vector2 {
+				constructor(x, y) {
+					this.x = x;
+					this.y = y;
+				}
+
+				add(vec) {
+					this.x += vec.x;
+					this.y += vec.y;
+					return this;
+				}
+
+				mul(vec) {
+					this.x *= vec.x;
+					this.y *= vec.y;
+					return this;
+				}
+			}
+			
+			const blocks = {
+				[
+					[new Vector2()]
+				]
+			};
+
+			let grid1 = new Array(40); for (let x = 0; x < grid1.length; x++) {grid1[x] = new Array(10).fill(0);}
+			let grid2 = new Array(40); for (let x = 0; x < grid2.length; x++) {grid2[x] = new Array(10).fill(0);}
+
+			const board = new Image(); board.src = "images/board.png";
+			const minoTextures = new Image(); minoTextures.src = "images/minos.png";
+
+			function render() {
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+				// player1 grid
+				ctx.drawImage(board, canvas.width * 0.15, (canvas.height - board.height) / 2);
+				
+				for (let y = 0; y < grid1.length; y++) {
+					for (let x = 0; x < grid1[y].length; x++) {
+						if (grid1[y][x] != 0) {
+							ctx.drawImage(minoTextures,
+								grid1[y][x] * 45, 0, // Image slice x, y
+								45, 45, // Image slice width, height
+								canvas.width * 0.15 + 264 + x * 45, (canvas.height - board.height) / 2 + 855 - y * 45, // x, y
+								45, 45 // width, height
+							);
+						}
+					}
+				}
+
+				// player2 grid
+				ctx.drawImage(board, canvas.width * 0.85 - board.width, (canvas.height - board.height) / 2);
+
+				for (let y = 0; y < grid2.length; y++) {
+					for (let x = 0; x < grid2[y].length; x++) {
+						if (grid2[y][x] != 0) {
+							ctx.drawImage(minoTextures,
+								grid2[y][x] * 45, 0, // Image slice x, y
+								45, 45, // Image slice width, height
+								canvas.width * 0.15 + 264 + x * 45, (canvas.height - board.height) / 2 + 855 - y * 45, // x, y
+								45, 45 // width, height
+							);
+						}
+					}
+				}
+			}
+
+			function update() {
+				// deltaTime
+				let now = Date.now();
+				let deltaTime = (now - lastUpdate) / 1000;
+				lastUpdate = now;
+
+				render();
+			}
+
+			setInterval(update);
+		</script>
+	</body>
+</html>
