@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Tetra Battle</title>
+		<link rel="icon" href="images/favicon.png"/>
+		<style>
+			body {
+				background-image: url("images/background.png");
+				background-size: 100vh;
+				margin: 0;
+				padding: 0;
+			}
+
+			canvas {
+				position: absolute;
+				margin: auto;
+				left: 0;
+				right: 0;
+				top: 0;
+				bottom: 0;
+			}
+		</style>
+	</head>
+	<body>
+		<canvas id="canvas"></canvas>
+		<script>
+			let lastUpdate = Date.now(); // For deltaTime
+			let canvas = document.getElementById("canvas");
+			let ctx = canvas.getContext("2d");
+
+			// Update canvas size
+			canvas.width = 3000;
+			canvas.height = 1500;
+			updateWindow();
+			window.onresize = updateWindow;
+
+			function updateWindow() {
+				if (window.innerWidth / window.innerHeight < canvas.width / canvas.height) {
+					canvas.style.width = "100%";
+					canvas.style.height = null;
+				} else {
+					canvas.style.width = null;
+					canvas.style.height = "100%";
+				}
+			}
+
+			class Vector2 {
+				constructor(x = 0, y = 0) {
+					this.x = x;
+					this.y = y;
+				}
+
+				copy() {
+					return new Vector2(this.x, this.y);
+				}
+
+				add(vec) {
+					this.x += vec.x;
+					this.y += vec.y;
+					return this;
+				}
+
+				subtract(vec) {
+					this.x -= vec.x;
+					this.y -= vec.y;
+					return this;
+				}
+
+				multiply(vec) {
+					this.x *= vec.x;
+					this.y *= vec.y;
+					return this;
+				}
+			}
+			
+			const blocks = [
+				[ // I
+					[new Vector2(-1, 0), new Vector2(0, 0), new Vector2(1, 0), new Vector2(2, 0)],
+					[new Vector2(1, 1), new Vector2(1, 0), new Vector2(1, -1), new Vector2(1, -2)],
+					[new Vector2(-1, -1), new Vector2(0, -1), new Vector2(1, -1), new Vector2(2, -1)],
+					[new Vector2(0, 1), new Vector2(0, 0), new Vector2(0, -1), new Vector2(0, -2)]
+				],
+				[ // J
+					[new Vector2(-1, 0), new Vector2(0, 0), new Vector2(1, 0), new Vector2(-1, 1)],
+					[new Vector2(0, 1), new Vector2(0, 0), new Vector2(0, -1), new Vector2(1, 1)],
+					[new Vector2(-1, 0), new Vector2(0, 0), new Vector2(1, 0), new Vector2(1, -1)],
+					[new Vector2(0, 1), new Vector2(0, 0), new Vector2(0, -1), new Vector2(-1, -1)]
+				],
+				[ // L
+					[new Vector2(-1, 0), new Vector2(0, 0), new Vector2(1, 0), new Vector2(1, 1)],
+					[new Vector2(0, 1), new Vector2(0, 0), new Vector2(0, -1), new Vector2(1, -1)],
+					[new Vector2(-1, 0), new Vector2(0, 0), new Vector2(1, 0), new Vector2(-1, -1)],
+					[new Vector2(0, 1), new Vector2(0, 0), new Vector2(0, -1), new Vector2(-1, 1)]
+				],
+				[ // O
+					[new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0)],
+					[new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0)],
+					[new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0)],
+					[new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0)]
+				],
+				[ // S
+					[new Vector2(-1, 0), new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1)],
+					[new Vector2(0, 1), new Vector2(0, 0), new Vector2(1, 0), new Vector2(1, -1)],
+					[new Vector2(-1, -1), new Vector2(0, -1), new Vector2(0, 0), new Vector2(1, 0)],
+					[new Vector2(-1, 1), new Vector2(-1, 0), new Vector2(0, 0), new Vector2(0, -1)]
+				],
+				[ // T
+					[new Vector2(-1, 0), new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 1)],
+					[new Vector2(0, 1), new Vector2(0, 0), new Vector2(0, -1), new Vector2(1, 0)],
+					[new Vector2(-1, 0), new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, -1)],
+					[new Vector2(0, 1), new Vector2(0, 0), new Vector2(0, -1), new Vector2(-1, 0)]
+				],
+				[ // Z
+					[new Vector2(-1, 1), new Vector2(0, 1), new Vector2(0, 0), new Vector2(1, 0)],
+					[new Vector2(1, 1), new Vector2(1, 0), new Vector2(0, 0), new Vector2(0, -1)],
+					[new Vector2(-1, 0), new Vector2(0, 0), new Vector2(0, -1), new Vector2(1, -1)],
+					[new Vector2(0, 1), new Vector2(0, 0), new Vector2(-1, 0), new Vector2(-1, -1)]
+				],
+			];
+
+			const wallKick = {
+				standard: [
+					{cw: [new Vector2(), new Vector2(-1), new Vector2(-1, 1), new Vector2(0, -2), new Vector2(-1, -2)],	// 0 -> 1
+					ccw: [new Vector2(), new Vector2(1), new Vector2(1, -1), new Vector2(0, 2), new Vector2(1, 2)]},	// 1 -> 0
+					{cw: [new Vector2(), new Vector2(1), new Vector2(1, -1), new Vector2(0, 2), new Vector2(1, 2)],		// 1 -> 2
+					ccw: [new Vector2(), new Vector2(-1), new Vector2(-1, 1), new Vector2(0, -2), new Vector2(-1, -2)]},// 2 -> 1
+					{cw: [new Vector2(), new Vector2(1), new Vector2(1, 1), new Vector2(0, -2), new Vector2(1, -2)],	// 2 -> 3
+					ccw: [new Vector2(), new Vector2(-1), new Vector2(-1, -1), new Vector2(0, 2), new Vector2(-1, 2)]},	// 3 -> 2
+					{cw: [new Vector2(), new Vector2(-1), new Vector2(-1, -1), new Vector2(0, 2), new Vector2(-1, 2)],	// 3 -> 0
+					ccw: [new Vector2(), new Vector2(1), new Vector2(1, 1), new Vector2(0, -2), new Vector2(1, -2)]}	// 0 -> 3
+				],
+				I: [
+					{cw: [new Vector2(), new Vector2(-2), new Vector2(1), new Vector2(-2, -1), new Vector2(1, 2)],
+					ccw: [new Vector2(), new Vector2(2), new Vector2(-1), new Vector2(2, 1), new Vector2(-1, -2)]},
+					{cw: [new Vector2(), new Vector2(-1), new Vector2(2), new Vector2(-1, 2), new Vector2(2, -1)],
+					ccw: [new Vector2(), new Vector2(1), new Vector2(-2), new Vector2(1, -2), new Vector2(-2, 1)]},
+					{cw: [new Vector2(), new Vector2(2), new Vector2(-1), new Vector2(2, 1), new Vector2(-1, -2)],
+					ccw: [new Vector2(), new Vector2(-2), new Vector2(1), new Vector2(-2, -1), new Vector2(1, 2)]},
+					{cw: [new Vector2(), new Vector2(1), new Vector2(-2), new Vector2(1, -2), new Vector2(-2, 1)],
+					ccw: [new Vector2(), new Vector2(-1), new Vector2(2), new Vector2(-1, 2), new Vector2(2, -1)]}
+				]
+			}
+
+			/*
+			Block Ids
+			0 = I
+			1 = J
+			2 = L
+			3 = O
+			4 = S
+			5 = T
+			6 = Z
+			7 = Garbage
+			8 = Current
+			*/
+
+			class Block {
+				constructor(grid, id) {
+					this.grid = grid;
+					this.id = id;
+					this.pos = new Vector2(4, 20);
+					this.rotation = 0;
+				}
+
+				empty() {
+					for (let y = 0; y < this.grid.length; y++) {
+						for (let x = 0; x < this.grid[y].length; x++) {
+							if (this.grid[y][x] == 8) {this.grid[y][x] = undefined;}
+						}
+					}
+				}
+
+				set() {
+					this.empty();
+					for (let i = 0; i < blocks[this.id][this.rotation].length; i++) {
+						let pos = this.pos.copy().add(blocks[this.id][this.rotation][i]);
+						this.grid[pos.y][pos.x] = 8;
+					}
+				}
+
+				getCells() {
+					const cells = []
+					for (let i = 0; i < blocks[this.id][this.rotation].length; i++) {cells.push(this.pos.add(blocks[this.id][this.rotation][i]));}
+					return cells;
+				}
+
+				isValid() {
+					for (let i = 0; i < blocks[this.id][this.rotation].length; i++) {
+						let pos = this.pos.copy().add(blocks[this.id][this.rotation][i]);
+						if (pos.x < 0 || pos.x >= 10 || pos.y < 0 || pos.y >= 40 || this.grid[pos.y][pos.x] != undefined && this.grid[pos.y][pos.x] != 8) {return false;}
+					}
+					return true;
+				}
+
+				isGrounded() {
+					this.pos.y--;
+					if (!this.isValid()) {
+						this.pos.y++;
+						return true;
+					}
+					this.pos.y++;
+					return false;
+				}
+
+				move(offset) {
+					this.pos.add(offset);
+					if (!this.isValid()) {
+						this.pos.subtract(offset);
+						return false;
+					}
+					this.set();
+					return true;
+				}
+
+				rotateCW() {
+					let wallKickData = this.id == 0 ? wallKick.I[this.rotation].cw : wallKick.standard[this.rotation].cw;
+					this.rotation = (this.rotation + 1) % 4;
+					for (let i = 0; i < wallKickData.length; i++) {
+						if (this.move(wallKickData[i])) {return true;}
+					}
+					this.rotation = (this.rotation + 3) % 4;
+					return false;
+				}
+
+				rotateCCW() {
+					this.rotation = (this.rotation + 3) % 4;
+					let wallKickData = this.id == 0 ? wallKick.I[this.rotation].ccw : wallKick.standard[this.rotation].ccw;
+					for (let i = 0; i < wallKickData.length; i++) {
+						if (this.move(wallKickData[i])) {return true;}
+					}
+					this.rotation = (this.rotation + 1) % 4;
+					return false;
+				}
+			}
+
+			function setLockAction(action) {
+				if (action) {
+					if (currentBlock.isGrounded()) {
+						lockEnabled = true;
+						lockTick = Date.now();
+						lockActions++;
+					} else {
+						lockEnabled = false;
+						lockActions = 0;
+					}
+				}
+			}
+			function clearFullRows() {
+				let cleared = 0;
+
+				for (let y = 0; y < grid1.length; y++) {
+					let isRowFull = true;
+
+					for (let x = 0; x < grid1[y].length; x++) {
+						if (grid1[y][x] == undefined) {
+							isRowFull = false;
+							break;
+						}
+					}
+
+					if (isRowFull) { // Clear row
+						for (let x = 0; x < grid1[y].length; x++) {
+							grid1[y][x] = undefined;
+						}
+						cleared++;
+					} else if (cleared > 0) { // Move row down
+						for (let x = 0; x < grid1[y].length; x++) {
+							grid1[y - cleared][x] = grid1[y][x];
+							grid1[y][x] = undefined;
+						}
+					}
+				}
+			}
+
+			function lock() {
+				lockEnabled = false;
+				lockActions = 0;
+
+				currentBlock.empty();
+				for (let i = 0; i < blocks[currentBlock.id][currentBlock.rotation].length; i++) {
+					let pos = currentBlock.pos.copy().add(blocks[currentBlock.id][currentBlock.rotation][i]);
+					currentBlock.grid[pos.y][pos.x] = currentBlock.id;
+				}
+
+				clearFullRows();
+				currentBlock = new Block(grid1, pickNextBlock());
+				currentBlock.set();
+			}
+
+			
+			let bag = [...Array(7).keys()];
+			function pickRandom() {
+				const index = Math.floor(Math.random() * bag.length);
+				const id = bag[index];
+				bag.splice(index, 1);
+				if (bag.length == 0) {bag = [...Array(7).keys()];}
+				return id;
+			}
+
+			let nextBlocks = [pickRandom(), pickRandom(), pickRandom(), pickRandom(), pickRandom()];
+			function pickNextBlock() {
+				let next = nextBlocks[0];
+				for (let i = 0; i < nextBlocks.length - 1; i++) {nextBlocks[i] = nextBlocks[i + 1];}
+				nextBlocks[nextBlocks.length - 1] = pickRandom();
+				return next
+			}
+
+			let currentHoldBlock = undefined;
+			let canHold = true;
+			function holdBlock() {
+				if (currentHoldBlock) { // Block in hold
+					let id = currentHoldBlock;
+					currentHoldBlock = currentBlock.id;
+					currentBlock = new Block(grid1, id)
+					currentBlock.set();
+				} else { // No block in hold
+					currentHoldBlock = currentBlock.id;
+					currentBlock = new Block(grid1, pickNextBlock());
+					currentBlock.set();
+				}
+			}
+
+			const keyCodes = {
+				shiftLeft: ["ArrowLeft"],
+				shiftRight: ["ArrowRight"],
+				softDrop: ["ArrowDown"],
+				hardDrop: ["Space"],
+				rotateCW: ["ArrowUp", "KeyX"],
+				rotateCCW: ["ControlLeft", "KeyZ"],
+				hold: ["ShiftLeft", "KeyC"]
+			}
+
+			let fallInterval = 1000;
+			let fallTick = Date.now();
+			const softDropScalar = 20;
+			let softDropEnabled = false;
+
+			const shiftDelay = 150;
+			const shiftInterval = 30;
+			let shiftDelayTick = Date.now();
+			let shiftTick = Date.now();
+			let shiftDir = 0;
+
+			const lockInterval = 500;
+			const lockMaxActions = 15;
+			let lockTick = Date.now();
+			let lockActions = 0;
+			let lockEnabled = false;
+
+			const grid1 = new Array(40); for (let x = 0; x < grid1.length; x++) {grid1[x] = new Array(10);}
+			const grid2 = new Array(40); for (let x = 0; x < grid2.length; x++) {grid2[x] = new Array(10);}
+
+			const board = new Image(); board.src = "images/board.png";
+			const minoTextures = new Image(); minoTextures.src = "images/minos.png";
+
+			let currentBlock = new Block(grid1, pickNextBlock())
+			currentBlock.set();
+
+			function render() {
+				ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+
+				// Player board
+				ctx.drawImage(board, canvas.width * 0.15, (canvas.height - board.height) / 2);
+				
+				// Grid
+				for (let y = 0; y < grid1.length; y++) {
+					for (let x = 0; x < grid1[y].length; x++) {
+						if (grid1[y][x] < 7) {
+							ctx.drawImage(minoTextures,
+								grid1[y][x] * 45, 0, // Image slice x, y
+								45, 45, // Image slice width, height
+								canvas.width * 0.15 + 264 + x * 45, (canvas.height - board.height) / 2 + 855 - y * 45, // Canvas x, y
+								45, 45 // Canvas width, height
+							);
+						} else if (grid1[y][x] == 8) { // Current block
+							ctx.drawImage(minoTextures,
+								currentBlock.id * 45, 0,
+								45, 45,
+								canvas.width * 0.15 + 264 + x * 45, (canvas.height - board.height) / 2 + 855 - y * 45,
+								45, 45
+							);
+						}
+					}
+				}
+
+				// Next blocks
+				for (let i = 0; i < nextBlocks.length; i++) {
+					for (let j = 0; j < blocks[nextBlocks[j]][0].length; j++) {
+						const pos = blocks[nextBlocks[i]][0][j];
+						if (nextBlocks[i] == 0) { // I
+							ctx.drawImage(minoTextures,
+								nextBlocks[i] * 45, 0,
+								45, 45,
+								canvas.width * 0.15 + 798 + pos.x * 45, (canvas.height - board.height) / 2 + 93 + i * 135 - pos.y * 45,
+								45, 45
+							);
+						} else if (nextBlocks[i] == 3) { // O
+							ctx.drawImage(minoTextures,
+								nextBlocks[i] * 45, 0,
+								45, 45,
+								canvas.width * 0.15 + 798 + pos.x * 45, (canvas.height - board.height) / 2 + 116 + i * 135 - pos.y * 45,
+								45, 45
+							);
+						} else { // JLSTZ
+							ctx.drawImage(minoTextures,
+								nextBlocks[i] * 45, 0,
+								45, 45,
+								canvas.width * 0.15 + 820 + pos.x * 45, (canvas.height - board.height) / 2 + 116 + i * 135 - pos.y * 45,
+								45, 45
+							);
+						}
+					}
+				}
+
+				// Hold block
+				if (currentHoldBlock != undefined) {
+					for (let i = 0; i < blocks[currentHoldBlock][0].length; i++) {
+						const pos = blocks[currentHoldBlock][0][i];
+						if (currentHoldBlock == 0) { // I
+							ctx.drawImage(minoTextures,
+							currentHoldBlock * 45, 0,
+								45, 45,
+								canvas.width * 0.15 + 71 + pos.x * 45, (canvas.height - board.height) / 2 + 93 - pos.y * 45,
+								45, 45
+							);
+						} else if (currentHoldBlock == 3) { // O
+							ctx.drawImage(minoTextures,
+								currentHoldBlock * 45, 0,
+								45, 45,
+								canvas.width * 0.15 + 71 + pos.x * 45, (canvas.height - board.height) / 2 + 116 - pos.y * 45,
+								45, 45
+							);
+						} else { // JLSTZ
+							ctx.drawImage(minoTextures,
+								currentHoldBlock * 45, 0,
+								45, 45,
+								canvas.width * 0.15 + 94 + pos.x * 45, (canvas.height - board.height) / 2 + 116 - pos.y * 45,
+								45, 45
+							);
+						}
+					}
+				}
+
+				// Opponent board
+				ctx.drawImage(board, canvas.width * 0.85 - board.width, (canvas.height - board.height) / 2);
+
+				for (let y = 0; y < grid2.length; y++) {
+					for (let x = 0; x < grid2[y].length; x++) {
+						if (grid2[y][x]) {
+							ctx.drawImage(minoTextures,
+								grid2[y][x] * 45, 0,
+								45, 45,
+								canvas.width * 0.15 + 264 + x * 45, (canvas.height - board.height) / 2 + 855 - y * 45, // x, y
+								45, 45
+							);
+						}
+					}
+				}
+			}
+
+			function update() {
+				// deltaTime
+				let now = Date.now();
+				let deltaTime = (now - lastUpdate) / 1000;
+				lastUpdate = now;
+
+				if (Date.now() - fallTick > (softDropEnabled ? fallInterval / softDropScalar : fallInterval)) {
+					fallTick = Date.now();
+					currentBlock.move(new Vector2(0, -1));
+
+					if (currentBlock.isGrounded()) {
+						if (!lockEnabled) {
+							lockEnabled = true;
+							lockTick = Date.now();
+						}
+					} else {
+						lockEnabled = false;
+						lockActions = 0;
+					}
+				}
+
+				if (Date.now() - shiftDelayTick > shiftDelay && Date.now() - shiftTick > shiftInterval && shiftDir != 0) {
+					shiftTick = Date.now();
+					setLockAction(currentBlock.move(new Vector2(shiftDir, 0)));
+				}
+
+				if (lockEnabled && (Date.now() - lockTick > lockInterval || lockActions > lockMaxActions)) {lock();}
+				render();
+			}
+
+			document.addEventListener("keydown", event => {
+				if (keyCodes.shiftLeft.indexOf(event.code) > -1) {
+					shiftDelayTick = Date.now();
+					shiftTick = Date.now();
+					shiftDir = -1;
+					setLockAction(currentBlock.move(new Vector2(-1, 0)));
+				} else if (keyCodes.shiftRight.indexOf(event.code) > -1) {
+					shiftDelayTick = Date.now();
+					shiftTick = Date.now();
+					shiftDir = 1;
+					setLockAction(currentBlock.move(new Vector2(1, 0)));
+				} else if (keyCodes.softDrop.indexOf(event.code) > -1) {
+					softDropEnabled = true;
+				} else if (keyCodes.rotateCW.indexOf(event.code) > -1) {
+					setLockAction(currentBlock.rotateCW());
+				} else if (keyCodes.rotateCCW.indexOf(event.code) > -1) {
+					setLockAction(currentBlock.rotateCCW());
+				} else if (keyCodes.hardDrop.indexOf(event.code) > -1) {
+					for (let i = 0; i < grid1.length; i++) {
+						if (!currentBlock.move(new Vector2(0, -1))) {
+							lock();
+							break;
+						}
+					}
+				} else if (keyCodes.hold.indexOf(event.code) > -1) {
+					holdBlock();
+				}
+			});
+
+			document.addEventListener("keyup", event => {
+				if (keyCodes.shiftLeft.indexOf(event.code) > -1) {
+					shiftDir = shiftDir == -1 ? 0 : 1
+				} else if (keyCodes.shiftRight.indexOf(event.code) > -1) {
+					shiftDir = shiftDir == 1 ? 0 : -1
+				} else if (keyCodes.softDrop.indexOf(event.code) > -1) {
+					softDropEnabled = false;
+				}
+			});
+
+			setInterval(update);
+		</script>
+	</body>
+</html>
