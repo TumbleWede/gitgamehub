@@ -111,6 +111,7 @@
 			(() => { // Scope functions and variables to prevent it from being modified on the brower console
 			let gameStarted = false;
 			let gameOver = true;
+			let win;
 
 			// PeerJS
 			const peerId = Math.floor(Math.random() * 8999 + 1000);
@@ -129,7 +130,7 @@
 					canHold: canHold,
 					garbage: garbage,
 					garbageToSend: garbageToSend,
-					gameOver: false,
+					gameOver: gameOver,
 					currentBlock: currentBlock.id
 				});
 			}
@@ -139,6 +140,7 @@
 				document.getElementById("canvas").hidden = true;
 				gameStarted = false;
 				gameOver = true;
+				win = null;
 				conn = null;
 				peerData = null;
 				grid = new Array(40); for (let x = 0; x < grid.length; x++) {grid[x] = new Array(10);}
@@ -187,6 +189,11 @@
 					peerData = data;
 					if (peerData.garbageToSend > 0) {garbage.push(peerData.garbageToSend);}
 					if (!peerData.canHold) {canHoldAlphaLerp2 = 0.25;}
+					if (peerData.gameOver) {
+						win = true;
+						gameOver = true;
+						setTimeout(() => {quit()}, 5000);
+					}
 				});
 
 				conn.on("close", () => {quit();});
@@ -480,12 +487,16 @@
 
 				currentBlock.empty();
 				let cells = currentBlock.getCells();
-				let fullyOverBoard = true;
 				
 				for (let i = 0; i < cells.length; i++) {
 					let pos = cells[i];
 					grid[pos.y][pos.x] = currentBlock.id;
 
+					if (cells[i].y > 21) {
+						gameOver = true;
+						win = false;
+						setTimeout(() => {quit()}, 5000);
+					}
 				}
 
 				let cleared = clearFullRows();
@@ -493,6 +504,8 @@
 
 				if (!currentBlock.isValid()) {
 					gameOver = true;
+					win = false;
+					setTimeout(() => {quit()}, 5000);
 					return;
 				}
 
@@ -681,7 +694,7 @@
 					// Garbage
 					let totalGarbage = 0;
 					for (let i = 0; i < garbage.length; i++) {totalGarbage += garbage[i];}
-					ctx.fillStyle = "#ff0000";
+					ctx.fillStyle = "red";
 					ctx.fillRect(
 						canvas.width * 0.15 + 245,
 						(canvas.height - board.height) / 2 + 899 - totalGarbage * 45,
@@ -787,6 +800,17 @@
 							14,
 							totalGarbage * 45
 						);
+					}
+
+					if (gameOver && win != null) {
+						ctx.font = "100px Azonix";
+						ctx.textAlign = "center";
+						ctx.textBaseline = "middle";
+						ctx.fillStyle = win ? "lime" : "red";
+						ctx.fillText(win ? "Win" : "Lose", canvas.width / 2, canvas.height / 2);
+						ctx.fillStyle = "black";
+						ctx.lineWidth = 2;
+						ctx.strokeText(win ? "Win" : "Lose", canvas.width / 2, canvas.height / 2);
 					}
 				}
 			}
