@@ -88,18 +88,16 @@
 			<h2 id="host-id" hidden></h2>
 			<div id="join-id" hidden>
 				<br><input type="text" id="join-code" maxlength="4" class="bevel join">
-				<input type="button" value="go" id="join-submit" maxlength="4" class="bevel join" style="width: 75px;" onclick="joinCode()">
+				<input type="button" value="go" id="join-submit" maxlength="4" class="bevel join" style="width: 75px;">
 			</div>
 		</div>
 		<canvas id="canvas" hidden></canvas>
 		<script>
+			let deltaTime = 0;
 			let lastUpdate = Date.now(); // For deltaTime
 			let canvas = document.getElementById("canvas");
 			let ctx = canvas.getContext("2d");
 
-			let gameStarted = false;
-			let gameOver = true;
-			
 			function hostButtonOnClick() {
 				document.getElementById("host-id").hidden = false;
 				document.getElementById("join-id").hidden = true;
@@ -110,24 +108,48 @@
 				document.getElementById("host-id").hidden = true;
 			}
 
+			(() => { // Scope functions and variables to prevent it from being modified on the brower console
+			let gameStarted = false;
+			let gameOver = true;
+
 			// PeerJS
 			const peerId = Math.floor(Math.random() * 8999 + 1000);
 			const peer = new Peer(peerId);
 			let peerData;
 			let conn;
 			let hasChanged = false;
+			let peerDataTick = Date.now(); // We will close the connection after 5 seconds of no data in case the person closed out of the tab
 			document.getElementById("host-id").innerHTML = "code: " + peerId;
 
-			function sendBoardData(garbageLines) {
+			function sendBoardData(garbageToSend = 0) {
 				conn.send({
-					grid: grid1,
+					grid: grid,
 					next: nextBlocks,
 					hold: currentHoldBlock,
 					canHold: canHold,
-					garbage: garbageLines,
+					garbage: garbage,
+					garbageToSend: garbageToSend,
 					gameOver: false,
 					currentBlock: currentBlock.id
 				});
+			}
+
+			function quit() {
+				document.getElementById("menu").hidden = false;
+				document.getElementById("canvas").hidden = true;
+				gameStarted = false;
+				gameOver = true;
+				conn = null;
+				peerData = null;
+				grid = new Array(40); for (let x = 0; x < grid.length; x++) {grid[x] = new Array(10);}
+				currentHoldBlock = undefined;
+				canHold = true;
+				canHoldAlphaLerp = 0.25;
+				bag = [...Array(7).keys()];
+				nextBlocks = [pickRandom(), pickRandom(), pickRandom(), pickRandom(), pickRandom()];
+				currentBlock = new Block(pickNextBlock());
+				currentBlock.set();
+				fallInterval = 1000;
 			}
 
 			// Host the game
@@ -141,48 +163,33 @@
 				ready();
 			});
 
-			peer.on("disconnected", () => {
-				document.getElementById("menu").hidden = false;
-				document.getElementById("canvas").hidden = true;
-				gameStarted = false;
-				gameOver = true;
-				conn = null;
-			});
-
-			peer.on("close", () => {
-				document.getElementById("menu").hidden = false;
-				document.getElementById("canvas").hidden = true;
-				gameStarted = false;
-				gameOver = true;
-				conn = null;
-			});
-
+			peer.on("disconnected", () => {quit();});
+			peer.on("close", () => {quit();});
 			peer.on("error", err => {console.log(err);});
 
-			// Join the game
-			function joinCode() {
+			document.getElementById("join-submit").addEventListener("click", () => {
 				const joinCode = document.getElementById("join-code").value;
 				if (conn) {conn.close();} // Close old connection
 				conn = peer.connect(joinCode, {reliable: true});
 				conn.on("open", () => {ready();});
-			}
+			});
 
 			function ready() {
+				peerDataTick = Date.now();
 				document.getElementById("menu").hidden = true;
 				document.getElementById("canvas").hidden = false;
 				gameStarted = true;
 				gameOver = false;
-				sendBoardData(0);
+				setTimeout(() => {sendBoardData();}, 100)
 
-				conn.on("data", data => {peerData = data;});
-
-				conn.on("close", () => {
-					document.getElementById("menu").hidden = false;
-					document.getElementById("canvas").hidden = true;
-					gameStarted = false;
-					gameOver = true;
-					conn = null;
+				conn.on("data", data => {
+					peerDataTick = Date.now();
+					peerData = data;
+					if (peerData.garbageToSend > 0) {garbage.push(peerData.garbageToSend);}
+					if (!peerData.canHold) {canHoldAlphaLerp2 = 0.25;}
 				});
+
+				conn.on("close", () => {quit();});
 			}
 
 			// Update canvas size
@@ -319,17 +326,16 @@
 			*/
 
 			class Block {
-				constructor(grid, id) {
-					this.grid = grid;
+				constructor(id) {
 					this.id = id;
 					this.pos = new Vector2(4, 20);
 					this.rotation = 0;
 				}
 
 				empty() {
-					for (let y = 0; y < this.grid.length; y++) {
-						for (let x = 0; x < this.grid[y].length; x++) {
-							if (this.grid[y][x] == 8) {this.grid[y][x] = undefined;}
+					for (let y = 0; y < grid.length; y++) {
+						for (let x = 0; x < grid[y].length; x++) {
+							if (grid[y][x] == 8) {grid[y][x] = undefined;}
 						}
 					}
 				}
@@ -339,7 +345,7 @@
 					let cells = this.getCells();
 					for (let i = 0; i < cells.length; i++) {
 						let pos = cells[i];
-						this.grid[pos.y][pos.x] = 8;
+						grid[pos.y][pos.x] = 8;
 					}
 				}
 
@@ -353,7 +359,7 @@
 					let cells = this.getCells();
 					for (let i = 0; i < cells.length; i++) {
 						let pos = cells[i].copy().add(offset);
-						if (pos.x < 0 || pos.x >= 10 || pos.y < 0 || pos.y >= 40 || this.grid[pos.y][pos.x] != undefined && this.grid[pos.y][pos.x] < 8) {return false;}
+						if (pos.x < 0 || pos.x >= 10 || pos.y < 0 || pos.y >= 40 || grid[pos.y][pos.x] != undefined && grid[pos.y][pos.x] < 8) {return false;}
 					}
 					return true;
 				}
@@ -402,35 +408,70 @@
 						lockActions++;
 					} else {
 						lockEnabled = false;
-						lockActions = 0;
 					}
 				}
 			}
+
+			function addGarbageLines() {
+				if (garbage.length == 0) {return;}
+				let empty = Math.floor(Math.random() * 9);
+				
+				for (let y = grid.length - 1; y >= garbage[0]; y--) {
+					for (let x = 0; x < grid[y].length; x++) {
+						grid[y][x] = grid[y - garbage[0]][x];
+						grid[y - garbage[0]][x] = undefined;
+					}
+				}
+
+				for (let y = 0; y < garbage[0]; y++) {
+					for (let x = 0; x < grid[y].length; x++) {
+						grid[y][x] = x == empty ? undefined : 7;
+					}
+				}
+
+				garbage.splice(0, 1);
+			}
+			
+			function clearGarbage(amount) {
+				for (let i = 0; i < garbage.length; i++) {
+					if (garbage[i] > amount) {
+						garbage[i] -= amount;
+						amount = 0;
+						return;
+					} else {
+						amount -= garbage[i];
+						garbage.splice(i, 1);
+					}
+				}
+			}
+
 			function clearFullRows() {
 				let cleared = 0;
 
-				for (let y = 0; y < grid1.length; y++) {
+				for (let y = 0; y < grid.length; y++) {
 					let isRowFull = true;
 
-					for (let x = 0; x < grid1[y].length; x++) {
-						if (grid1[y][x] == undefined) {
+					for (let x = 0; x < grid[y].length; x++) {
+						if (grid[y][x] == undefined) {
 							isRowFull = false;
 							break;
 						}
 					}
 
 					if (isRowFull) { // Clear row
-						for (let x = 0; x < grid1[y].length; x++) {
-							grid1[y][x] = undefined;
+						for (let x = 0; x < grid[y].length; x++) {
+							grid[y][x] = undefined;
 						}
 						cleared++;
 					} else if (cleared > 0) { // Move row down
-						for (let x = 0; x < grid1[y].length; x++) {
-							grid1[y - cleared][x] = grid1[y][x];
-							grid1[y][x] = undefined;
+						for (let x = 0; x < grid[y].length; x++) {
+							grid[y - cleared][x] = grid[y][x];
+							grid[y][x] = undefined;
 						}
 					}
 				}
+
+				if (cleared == 0) {addGarbageLines()} else {clearGarbage(cleared); return cleared;}
 			}
 
 			function lock() {
@@ -439,13 +480,16 @@
 
 				currentBlock.empty();
 				let cells = currentBlock.getCells();
+				let fullyOverBoard = true;
+				
 				for (let i = 0; i < cells.length; i++) {
 					let pos = cells[i];
-					currentBlock.grid[pos.y][pos.x] = currentBlock.id;
+					grid[pos.y][pos.x] = currentBlock.id;
+
 				}
 
-				clearFullRows();
-				currentBlock = new Block(grid1, pickNextBlock());
+				let cleared = clearFullRows();
+				currentBlock = new Block(pickNextBlock());
 
 				if (!currentBlock.isValid()) {
 					gameOver = true;
@@ -454,6 +498,7 @@
 
 				currentBlock.set();
 				canHold = true;
+				sendBoardData(cleared);
 			}
 
 			
@@ -479,6 +524,7 @@
 			let currentHoldBlock = undefined;
 			let canHold = true;
 			let canHoldAlphaLerp = 0.25;
+			let canHoldAlphaLerp2 = 0.25;
 
 			function holdBlock() {
 				if (canHold) {
@@ -488,11 +534,11 @@
 					if (currentHoldBlock != undefined) { // Block in hold
 						let id = currentHoldBlock;
 						currentHoldBlock = currentBlock.id;
-						currentBlock = new Block(grid1, id);
+						currentBlock = new Block(id);
 						currentBlock.set();
 					} else { // No block in hold
 						currentHoldBlock = currentBlock.id;
-						currentBlock = new Block(grid1, pickNextBlock());
+						currentBlock = new Block(pickNextBlock());
 						currentBlock.set();
 					}
 				}
@@ -525,19 +571,20 @@
 			let lockActions = 0;
 			let lockEnabled = false;
 
-			const grid1 = new Array(40); for (let x = 0; x < grid1.length; x++) {grid1[x] = new Array(10);}
+			let grid = new Array(40); for (let x = 0; x < grid.length; x++) {grid[x] = new Array(10);}
+			let garbage = [];
+			let combo = 0;
 
 			const board = new Image(); board.src = "assets/board.png";
 			const minoTextures = new Image(); minoTextures.src = "assets/minos.png";
 
-			let currentBlock = new Block(grid1, pickNextBlock());
+			let currentBlock = new Block(pickNextBlock());
 			currentBlock.set();
 
 			function render() {
-				
 				// deltaTime
 				let now = Date.now();
-				let deltaTime = (now - lastUpdate) / 1000;
+				deltaTime = (now - lastUpdate) / 1000;
 				lastUpdate = now;
 
 				ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
@@ -547,17 +594,17 @@
 					// Grid
 					ctx.drawImage(board, canvas.width * 0.15, (canvas.height - board.height) / 2);
 
-					for (let y = 0; y < grid1.length; y++) {
-						for (let x = 0; x < grid1[y].length; x++) {
-							if (grid1[y][x] < 8) {
+					for (let y = 0; y < grid.length; y++) {
+						for (let x = 0; x < grid[y].length; x++) {
+							if (grid[y][x] < 8) {
 								ctx.drawImage(minoTextures,
-									grid1[y][x] * 45, 0, // Image slice x, y
+									grid[y][x] * 45, 0, // Image slice x, y
 									45, 45, // Image slice width, height
 									canvas.width * 0.15 + 264 + x * 45, (canvas.height - board.height) / 2 + 855 - y * 45, // Canvas x, y
 									45, 45 // Canvas width, height
 								);
-							} else if (grid1[y][x] >= 8) { // Current/Ghost block
-								if (grid1[y][x] == 9) {ctx.globalAlpha = 0.25;} // Make ghost block transparent
+							} else if (grid[y][x] >= 8) { // Current/Ghost block
+								if (grid[y][x] == 9) {ctx.globalAlpha = 0.25;} // Make ghost block transparent
 								ctx.drawImage(minoTextures,
 									currentBlock.id * 45, 0,
 									45, 45,
@@ -631,6 +678,17 @@
 						}
 					}
 
+					// Garbage
+					let totalGarbage = 0;
+					for (let i = 0; i < garbage.length; i++) {totalGarbage += garbage[i];}
+					ctx.fillStyle = "#ff0000";
+					ctx.fillRect(
+						canvas.width * 0.15 + 245,
+						(canvas.height - board.height) / 2 + 899 - totalGarbage * 45,
+						14,
+						totalGarbage * 45
+					);
+
 					// Opponent board
 					ctx.drawImage(board, canvas.width * 0.85 - board.width, (canvas.height - board.height) / 2);
 
@@ -642,7 +700,7 @@
 									ctx.drawImage(minoTextures,
 										peerData.grid[y][x] * 45, 0,
 										45, 45,
-										canvas.width * 0.85 - board.width + 264 + x * 45, (canvas.height - board.height) / 2 + 855 - y * 45, // Canvas x, y
+										canvas.width * 0.85 - board.width + 264 + x * 45, (canvas.height - board.height) / 2 + 855 - y * 45,
 										45, 45
 									);
 								} else if (peerData.grid[y][x] >= 8) {
@@ -691,7 +749,8 @@
 						if (peerData.hold != undefined) {
 							for (let i = 0; i < blocks[peerData.hold][0].length; i++) {
 								const pos = blocks[peerData.hold][0][i];
-								ctx.globalAlpha = peerData.canHold ? 1 : 0.25;
+								canHoldAlphaLerp2 = lerp(canHoldAlphaLerp2, peerData.canHold ? 1 : 0.25, deltaTime * 2);
+								ctx.globalAlpha = canHoldAlphaLerp2;
 
 								if (peerData.hold == 0) { // I
 									ctx.drawImage(minoTextures,
@@ -718,6 +777,16 @@
 								ctx.globalAlpha = 1;
 							}
 						}
+
+						// Garbage
+						totalGarbage = 0;
+						for (let i = 0; i < peerData.garbage.length; i++) {totalGarbage += peerData.garbage[i];}
+						ctx.fillRect(
+							canvas.width * 0.85 - board.width + 245,
+							(canvas.height - board.height) / 2 + 899 - totalGarbage * 45,
+							14,
+							totalGarbage * 45
+						);
 					}
 				}
 			}
@@ -738,7 +807,6 @@
 								}
 							} else {
 								lockEnabled = false;
-								lockActions = 0;
 							}
 						}
 
@@ -749,29 +817,31 @@
 						}
 
 						// Ghost block
-						for (let y = 0; y < grid1.length; y++) {
-							for (let x = 0; x < grid1[y].length; x++) {
-								if (grid1[y][x] == 9) {grid1[y][x] = undefined;}
+						for (let y = 0; y < grid.length; y++) {
+							for (let x = 0; x < grid[y].length; x++) {
+								if (grid[y][x] == 9) {grid[y][x] = undefined;}
 							}
 						}
 						
 						let drop = 0;
-						for (let i = 0; i < grid1.length; i++) {
+						for (let i = 0; i < grid.length; i++) {
 							if (!currentBlock.isValid(new Vector2(0, -drop))) {
 								let cells = currentBlock.getCells();
 								for (let j = 0; j < cells.length; j++) {
 									let pos = cells[j].copy().add(new Vector2(0, -drop + 1));
-									grid1[pos.y][pos.x] = grid1[pos.y][pos.x] != undefined ? grid1[pos.y][pos.x] : 9;
+									grid[pos.y][pos.x] = grid[pos.y][pos.x] != undefined ? grid[pos.y][pos.x] : 9;
 								}
 								break;
 							} else {drop++}
 						}
 						
+						fallInterval = Math.max(fallInterval - deltaTime, 25)
 						if (lockEnabled && (Date.now() - lockTick > lockInterval || lockActions > lockMaxActions)) {lock();} // Lock block
+						if (Date.now() - peerDataTick > 5000 && conn) {conn.close();}
 					}
 				}
 
-				if (hasChanged) {sendBoardData(0);}
+				if (hasChanged) {sendBoardData();}
 				hasChanged = false;
 				render();
 			}
@@ -795,7 +865,7 @@
 				} else if (keyCodes.rotateCCW.indexOf(event.code) > -1) {
 					setLockAction(currentBlock.rotateCCW());
 				} else if (keyCodes.hardDrop.indexOf(event.code) > -1) {
-					for (let i = 0; i < grid1.length; i++) {
+					for (let i = 0; i < grid.length; i++) {
 						if (!currentBlock.move(new Vector2(0, -1))) {
 							lock();
 							hasChanged = true;
@@ -819,6 +889,7 @@
 			});
 
 			setInterval(update);
+		})();
 		</script>
 	</body>
 </html>
