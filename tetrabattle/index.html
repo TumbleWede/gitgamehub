@@ -144,6 +144,7 @@
 				win = null;
 				conn = null;
 				peerData = null;
+				shiftDir = 0;
 				grid = new Array(40); for (let x = 0; x < grid.length; x++) {grid[x] = new Array(10);}
 				currentHoldBlock = undefined;
 				canHold = true;
@@ -369,7 +370,7 @@
 						let pos = cells[i];
 						grid[pos.y][pos.x] = 8;
 					}
-					favicon.setAttribute("href", "assets/favicon/" + fromIdToName(this.id) + ".png");
+					if (gameOver) {favicon.setAttribute("href", "assets/favicon/favicon.png");} else {favicon.setAttribute("href", "assets/favicon/" + fromIdToName(this.id) + ".png");}
 				}
 
 				getCells() {
@@ -511,23 +512,25 @@
 					if (cells[i].y > 21) {
 						gameOver = true;
 						win = false;
+						sendBoardData(cleared);
 						setTimeout(() => {quit()}, 5000);
 					}
 				}
 
 				let cleared = clearFullRows();
+				sendBoardData(cleared);
 				currentBlock = new Block(pickNextBlock());
 
 				if (!currentBlock.isValid()) {
 					gameOver = true;
 					win = false;
+					sendBoardData(cleared);
 					setTimeout(() => {quit()}, 5000);
 					return;
 				}
 
 				currentBlock.set();
 				canHold = true;
-				sendBoardData(cleared);
 			}
 
 			
