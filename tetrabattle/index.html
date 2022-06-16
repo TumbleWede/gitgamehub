@@ -147,6 +147,7 @@
 				currentHoldBlock = undefined;
 				canHold = true;
 				canHoldAlphaLerp = 0.25;
+				garbage = {};
 				bag = [...Array(7).keys()];
 				nextBlocks = [pickRandom(), pickRandom(), pickRandom(), pickRandom(), pickRandom()];
 				currentBlock = new Block(pickNextBlock());
