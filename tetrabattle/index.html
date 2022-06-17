@@ -321,6 +321,13 @@
 				]
 			}
 
+			const tSpinCorners = [
+				[new Vector2(-1, 1), new Vector2(1, 1), new Vector2(-1, -1), new Vector2(-1, -1)],
+				[new Vector2(1, 1), new Vector2(1, -1), new Vector2(-1, 1), new Vector2(-1, -1)],
+				[new Vector2(1, -1), new Vector2(-1, -1), new Vector2(1, 1), new Vector2(-1, 1)],
+				[new Vector2(-1, -1), new Vector2(-1, 1), new Vector2(1, -1), new Vector2(1, 1)]
+			]
+
 			/*
 			Block Ids
 			undefined = None
@@ -405,7 +412,7 @@
 					let wallKickData = this.id == 0 ? wallKick.I[this.rotation].cw : wallKick.standard[this.rotation].cw;
 					this.rotation = (this.rotation + 1) % 4;
 					for (let i = 0; i < wallKickData.length; i++) {
-						if (this.move(wallKickData[i])) {return true;}
+						if (this.move(wallKickData[i])) {return wallKickData[i];}
 					}
 					this.rotation = (this.rotation + 3) % 4;
 					return false;
@@ -415,7 +422,7 @@
 					this.rotation = (this.rotation + 3) % 4;
 					let wallKickData = this.id == 0 ? wallKick.I[this.rotation].ccw : wallKick.standard[this.rotation].ccw;
 					for (let i = 0; i < wallKickData.length; i++) {
-						if (this.move(wallKickData[i])) {return true;}
+						if (this.move(wallKickData[i])) {return wallKickData[i];}
 					}
 					this.rotation = (this.rotation + 1) % 4;
 					return false;
@@ -469,6 +476,82 @@
 				}
 			}
 
+			function isPerfectClear() {
+				for (let y = 0; y < grid.length; y++) {
+					for (let x = 0; x < grid[y].length; x++) {
+						if (grid[y][x] != undefined) {return false;}
+					}
+				}
+				return true;
+			}
+
+			/*
+			Attack types
+			0 = Quadruple
+			1 = T-Spin Single
+			2 = T-Spin Double
+			3 = T-Spin Triple
+			*/
+
+			function calcGarbageToSend(cleared) {
+				if (!cleared) {return 0;}
+				let amount = 0;
+				let attack;
+
+				if (tSpin) {
+					switch (cleared) {
+						case 1:
+							attack = 1;
+							amount += 2;
+							break;
+						case 2:
+							attack = 2;
+							amount += 4;
+							break;
+						case 3:
+							attack = 3;
+							amount += 6;
+							break;
+						default: break;
+					}
+				} else {
+					switch (cleared) {
+						case 2:
+							amount++;
+							break;
+						case 3:
+							amount += 2;
+							break;
+						case 4:
+							attack = 0;
+							amount += 4;
+							break;
+						default: break;
+					}
+				}
+				
+				if (lastAttackType == attack && attack != undefined) {amount++;}
+				if (isPerfectClear()) {amount = 10;}
+				lastAttackType = attack;
+				return amount;
+			}
+
+			function isEmpty(x, y) {
+				if (x < 0 || x >= 10 || y < 0 || y >= 40 || grid[y][x] != undefined) {return false;}
+				return true;
+			}
+
+			function tryTSpin(rotation) { // Both forward corners must be filled and 1 backward corner needs to be filled. A T-Spin triple setup with a hole can override this rule.
+				if (currentBlock.id != 5) {return;}
+				let forward1 = tSpinCorners[currentBlock.rotation][0];
+				let forward2 = tSpinCorners[currentBlock.rotation][1];
+				let backward1 = tSpinCorners[currentBlock.rotation][2];
+				let backward2 = tSpinCorners[currentBlock.rotation][3];
+
+				if (Math.abs(rotation.x) == 1 && rotation.y == -2) {tSpin = true; return;}
+				if ((!isEmpty(forward1.x, forward1.y) && !isEmpty(forward2.x, forward2.y)) && (!isEmpty(backward1.x, backward1.y) || !isEmpty(backward2.x, backward2.y))) {tSpin = true;}
+			}
+
 			function clearFullRows() {
 				let cleared = 0;
 
@@ -495,7 +578,7 @@
 					}
 				}
 
-				if (cleared == 0) {addGarbageLines()} else {clearGarbage(cleared); return cleared;}
+				if (cleared == 0) {addGarbageLines()} else {clearGarbage(calcGarbageToSend(cleared)); return cleared;}
 			}
 
 			function lock() {
@@ -512,25 +595,26 @@
 					if (cells[i].y > 21) {
 						gameOver = true;
 						win = false;
-						sendBoardData(cleared);
+						sendBoardData();
 						setTimeout(() => {quit()}, 5000);
 					}
 				}
 
 				let cleared = clearFullRows();
-				sendBoardData(cleared);
+				sendBoardData(calcGarbageToSend(cleared));
 				currentBlock = new Block(pickNextBlock());
 
 				if (!currentBlock.isValid()) {
 					gameOver = true;
 					win = false;
-					sendBoardData(cleared);
+					sendBoardData();
 					setTimeout(() => {quit()}, 5000);
 					return;
 				}
 
 				currentBlock.set();
 				canHold = true;
+				tSpin = false;
 			}
 
 			
@@ -606,6 +690,8 @@
 			let grid = new Array(40); for (let x = 0; x < grid.length; x++) {grid[x] = new Array(10);}
 			let garbage = [];
 			let combo = 0;
+			let tSpin = false;
+			let lastAttackType;
 
 			const board = new Image(); board.src = "assets/board.png";
 			const minoTextures = new Image(); minoTextures.src = "assets/minos.png";
@@ -878,7 +964,7 @@
 							} else {drop++}
 						}
 						
-						fallInterval = Math.max(fallInterval - deltaTime, 25)
+						fallInterval = Math.max(fallInterval - deltaTime * 2, 25)
 						if (lockEnabled && (Date.now() - lockTick > lockInterval || lockActions > lockMaxActions)) {lock();} // Lock block
 						if (Date.now() - peerDataTick > 5000 && conn) {conn.close();}
 					}
@@ -904,9 +990,21 @@
 				} else if (keyCodes.softDrop.indexOf(event.code) > -1) {
 					softDropEnabled = true;
 				} else if (keyCodes.rotateCW.indexOf(event.code) > -1) {
-					setLockAction(currentBlock.rotateCW());
+					let wasGrounded = currentBlock.isGrounded();
+					let rotation = currentBlock.rotateCW()
+
+					if (rotation) {
+						setLockAction(true);
+						if (currentBlock.isGrounded() && wasGrounded) {tryTSpin(rotation)}
+					}
 				} else if (keyCodes.rotateCCW.indexOf(event.code) > -1) {
-					setLockAction(currentBlock.rotateCCW());
+					let wasGrounded = currentBlock.isGrounded();
+					let rotation = currentBlock.rotateCCW()
+
+					if (rotation) {
+						setLockAction(true);
+						if (currentBlock.isGrounded() && wasGrounded) {tryTSpin(rotation)}
+					}
 				} else if (keyCodes.hardDrop.indexOf(event.code) > -1) {
 					for (let i = 0; i < grid.length; i++) {
 						if (!currentBlock.move(new Vector2(0, -1))) {
