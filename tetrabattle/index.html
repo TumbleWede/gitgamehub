@@ -150,6 +150,8 @@
 				canHold = true;
 				canHoldAlphaLerp = 0.25;
 				garbage = [];
+				garbageLerp = 0;
+				garbageLerp2 = 0;
 				bag = [...Array(7).keys()];
 				nextBlocks = [pickRandom(), pickRandom(), pickRandom(), pickRandom(), pickRandom()];
 				currentBlock = new Block(pickNextBlock());
@@ -704,6 +706,8 @@
 
 			let grid = new Array(40); for (let x = 0; x < grid.length; x++) {grid[x] = new Array(10);}
 			let garbage = [];
+			let garbageLerp = 0;
+			let garbageLerp2 = 0;
 			let combo = 0;
 			let tSpin = 0; // 0 = None; 1 = Mini T-Spin; 2 = T-Spin
 			let lastAttackType;
@@ -814,12 +818,13 @@
 					// Garbage
 					let totalGarbage = 0;
 					for (let i = 0; i < garbage.length; i++) {totalGarbage += garbage[i];}
+					garbageLerp = lerp(garbageLerp, totalGarbage * 45, deltaTime * 5);
 					ctx.fillStyle = "red";
 					ctx.fillRect(
 						canvas.width * 0.15 + 245,
-						(canvas.height - board.height) / 2 + 899 - totalGarbage * 45,
+						(canvas.height - board.height) / 2 + 899 - garbageLerp,
 						14,
-						totalGarbage * 45
+						garbageLerp
 					);
 
 					// Opponent board
@@ -914,11 +919,12 @@
 						// Garbage
 						totalGarbage = 0;
 						for (let i = 0; i < peerData.garbage.length; i++) {totalGarbage += peerData.garbage[i];}
+						garbageLerp2 = lerp(garbageLerp2, totalGarbage * 45, deltaTime * 5);
 						ctx.fillRect(
 							canvas.width * 0.85 - board.width + 245,
-							(canvas.height - board.height) / 2 + 899 - totalGarbage * 45,
+							(canvas.height - board.height) / 2 + 899 - garbageLerp2,
 							14,
-							totalGarbage * 45
+							garbageLerp2
 						);
 					}
 
