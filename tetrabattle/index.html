@@ -491,6 +491,7 @@
 			1 = T-Spin Single
 			2 = T-Spin Double
 			3 = T-Spin Triple
+			4 = Mini T-Spin
 			*/
 
 			function calcGarbageToSend(cleared) {
@@ -498,7 +499,7 @@
 				let amount = 0;
 				let attack;
 
-				if (tSpin) {
+				if (tSpin == 1) {attack = 4;} else if (tSpin == 2) {
 					switch (cleared) {
 						case 1:
 							attack = 1;
@@ -530,7 +531,12 @@
 					}
 				}
 				
-				if (lastAttackType == attack && attack != undefined) {amount++;}
+				if (lastAttackType == attack && attack != undefined) {
+					if (tSpin) {
+						if (tSpin == 1 || cleared == 1) {amount++;} // (MTSS, MTSD, TSS) = 1
+						else {amount += cleared;} // TSD = 2, TST = 3
+					} else {amount += 2;} // Quadruple = 2
+				}
 				if (isPerfectClear()) {amount = 10;}
 				lastAttackType = attack;
 				return amount;
@@ -547,9 +553,14 @@
 				let forward2 = tSpinCorners[currentBlock.rotation][1];
 				let backward1 = tSpinCorners[currentBlock.rotation][2];
 				let backward2 = tSpinCorners[currentBlock.rotation][3];
+				let count = !isEmpty(forward1.x, forward1.y) ? 1 : 0;
+				count += !isEmpty(forward2.x, forward2.y) ? 1 : 0;
+				count += !isEmpty(backward1.x, backward1.y) ? 1 : 0;
+				count += !isEmpty(backward2.x, backward2.y) ? 1 : 0;
 
-				if (Math.abs(rotation.x) == 1 && rotation.y == -2) {tSpin = true; return;}
-				if ((!isEmpty(forward1.x, forward1.y) && !isEmpty(forward2.x, forward2.y)) && (!isEmpty(backward1.x, backward1.y) || !isEmpty(backward2.x, backward2.y))) {tSpin = true;}
+				if (Math.abs(rotation.x) == 1 && rotation.y == -2) {tSpin = 2; return;}
+				if ((!isEmpty(forward1.x, forward1.y) && !isEmpty(forward2.x, forward2.y)) && (!isEmpty(backward1.x, backward1.y) || !isEmpty(backward2.x, backward2.y))) {tSpin = 2;}
+				else if (count == 3) {tSpin = 1;}
 			}
 
 			function clearFullRows() {
@@ -578,7 +589,11 @@
 					}
 				}
 
-				if (cleared == 0) {addGarbageLines()} else {clearGarbage(calcGarbageToSend(cleared)); return cleared;}
+				if (cleared == 0) {addGarbageLines()} else {
+					cleared = calcGarbageToSend(cleared);
+					clearGarbage(cleared);
+					return cleared;
+				}
 			}
 
 			function lock() {
@@ -601,7 +616,7 @@
 				}
 
 				let cleared = clearFullRows();
-				sendBoardData(calcGarbageToSend(cleared));
+				sendBoardData(cleared);
 				currentBlock = new Block(pickNextBlock());
 
 				if (!currentBlock.isValid()) {
@@ -690,7 +705,7 @@
 			let grid = new Array(40); for (let x = 0; x < grid.length; x++) {grid[x] = new Array(10);}
 			let garbage = [];
 			let combo = 0;
-			let tSpin = false;
+			let tSpin = 0; // 0 = None; 1 = Mini T-Spin; 2 = T-Spin
 			let lastAttackType;
 
 			const board = new Image(); board.src = "assets/board.png";
