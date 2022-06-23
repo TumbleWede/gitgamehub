@@ -76,6 +76,7 @@
 				transform: translateX(-50%);
 			}
 		</style>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
 		<script src="https://unpkg.com/peerjs@1.4.5/dist/peerjs.min.js"></script>
 	</head>
 	<body>
@@ -113,6 +114,7 @@
 			let gameStarted = false;
 			let gameOver = true;
 			let win;
+			let joinCode;
 
 			// PeerJS
 			const peerId = Math.floor(Math.random() * 8999 + 1000);
@@ -122,6 +124,12 @@
 			let hasChanged = false;
 			let peerDataTick = Date.now(); // We will close the connection after 5 seconds of no data in case the person closed out of the tab
 			document.getElementById("host-id").innerHTML = "code: " + peerId;
+
+			let rng;
+			function randomseed(seed) {
+				if (seed) {rng = new Math.seedrandom(seed);}
+				return rng();
+			}
 
 			function sendBoardData(garbageToSend = 0) {
 				conn.send({
@@ -168,6 +176,7 @@
 				}
 
 				conn = c;
+				joinCode = peerId;
 				ready();
 			});
 
@@ -176,7 +185,7 @@
 			peer.on("error", err => {console.log(err);});
 
 			document.getElementById("join-submit").addEventListener("click", () => {
-				const joinCode = document.getElementById("join-code").value;
+				joinCode = document.getElementById("join-code").value;
 				if (conn) {conn.close();} // Close old connection
 				conn = peer.connect(joinCode, {reliable: true});
 				conn.on("open", () => {ready();});
@@ -188,7 +197,12 @@
 				document.getElementById("canvas").hidden = false;
 				gameStarted = true;
 				gameOver = false;
-				setTimeout(() => {sendBoardData();}, 100)
+				randomseed(parseInt(joinCode));
+				nextBlocks = [pickRandom(), pickRandom(), pickRandom(), pickRandom(), pickRandom()];
+				currentBlock = new Block(pickNextBlock());
+				currentBlock.set();
+
+				sendBoardData();
 
 				conn.on("data", data => {
 					peerDataTick = Date.now();
@@ -638,14 +652,14 @@
 			let bag = [...Array(7).keys()];
 
 			function pickRandom() {
-				const index = Math.floor(Math.random() * bag.length);
+				const index = Math.floor(randomseed() * bag.length);
 				const id = bag[index];
 				bag.splice(index, 1);
 				if (bag.length == 0) {bag = [...Array(7).keys()];}
 				return id;
 			}
 
-			let nextBlocks = [pickRandom(), pickRandom(), pickRandom(), pickRandom(), pickRandom()];
+			let nextBlocks;
 
 			function pickNextBlock() {
 				let next = nextBlocks[0];
@@ -715,8 +729,7 @@
 			const board = new Image(); board.src = "assets/board.png";
 			const minoTextures = new Image(); minoTextures.src = "assets/minos.png";
 
-			let currentBlock = new Block(pickNextBlock());
-			currentBlock.set();
+			let currentBlock;
 
 			function render() {
 				// deltaTime
