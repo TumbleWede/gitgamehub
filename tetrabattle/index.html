@@ -140,7 +140,9 @@
 					garbage: garbage,
 					garbageToSend: garbageToSend,
 					gameOver: gameOver,
-					currentBlock: currentBlock.id
+					currentBlock: currentBlock.id,
+					pushX: pushX,
+					pushY: pushLerp.y
 				});
 			}
 
@@ -161,9 +163,6 @@
 				garbageLerp = 0;
 				garbageLerp2 = 0;
 				bag = [...Array(7).keys()];
-				nextBlocks = [pickRandom(), pickRandom(), pickRandom(), pickRandom(), pickRandom()];
-				currentBlock = new Block(pickNextBlock());
-				currentBlock.set();
 				fallInterval = 1000;
 				favicon.setAttribute("href", "assets/favicon/favicon.png");
 			}
@@ -201,12 +200,24 @@
 				nextBlocks = [pickRandom(), pickRandom(), pickRandom(), pickRandom(), pickRandom()];
 				currentBlock = new Block(pickNextBlock());
 				currentBlock.set();
-
-				sendBoardData();
+				peerData = {
+					grid: grid,
+					next: nextBlocks,
+					hold: currentHoldBlock,
+					canHold: canHold,
+					garbage: garbage,
+					garbageToSend: 0,
+					gameOver: gameOver,
+					currentBlock: currentBlock.id,
+					pushX: 0,
+					pushY: 0
+				};
 
 				conn.on("data", data => {
 					peerDataTick = Date.now();
 					peerData = data;
+					pushX2 = peerData.pushX;
+					pushLerp2.y = peerData.pushY;
 					if (peerData.garbageToSend > 0) {garbage.push(peerData.garbageToSend);}
 					if (!peerData.canHold) {canHoldAlphaLerp2 = 0.25;}
 					if (peerData.gameOver) {
@@ -220,8 +231,8 @@
 			}
 
 			// Update canvas size
-			canvas.width = 3000;
-			canvas.height = 1500;
+			canvas.width = 2500;
+			canvas.height = 1250;
 			updateWindow();
 			window.onresize = updateWindow;
 
@@ -647,7 +658,6 @@
 				canHold = true;
 				tSpin = false;
 			}
-
 			
 			let bag = [...Array(7).keys()];
 
@@ -726,6 +736,11 @@
 			let tSpin = 0; // 0 = None; 1 = Mini T-Spin; 2 = T-Spin
 			let lastAttackType;
 
+			let pushX = 0;
+			let pushLerp = new Vector2();
+			let pushX2 = 0;
+			let pushLerp2 = new Vector2();
+
 			const board = new Image(); board.src = "assets/board.png";
 			const minoTextures = new Image(); minoTextures.src = "assets/minos.png";
 
@@ -736,13 +751,17 @@
 				let now = Date.now();
 				deltaTime = (now - lastUpdate) / 1000;
 				lastUpdate = now;
-
+				pushLerp.x = lerp(pushLerp.x, pushX * 5, deltaTime * 5);
+				pushLerp.y = lerp(pushLerp.y, 0, deltaTime * 5);
+				pushLerp2.x = lerp(pushLerp2.x, pushX2 * 5, deltaTime * 5);
+				pushLerp2.y = lerp(pushLerp2.y, 0, deltaTime * 5);
 				ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
 
 				// Player board
 				if (gameStarted) {
 					// Grid
-					ctx.drawImage(board, canvas.width * 0.15, (canvas.height - board.height) / 2);
+
+					ctx.drawImage(board, canvas.width * 0.1 + pushLerp.x, (canvas.height - board.height) / 2 + pushLerp.y);
 
 					for (let y = 0; y < grid.length; y++) {
 						for (let x = 0; x < grid[y].length; x++) {
@@ -750,7 +769,7 @@
 								ctx.drawImage(minoTextures,
 									grid[y][x] * 45, 0, // Image slice x, y
 									45, 45, // Image slice width, height
-									canvas.width * 0.15 + 264 + x * 45, (canvas.height - board.height) / 2 + 855 - y * 45, // Canvas x, y
+									canvas.width * 0.1 + pushLerp.x + 264 + x * 45, (canvas.height - board.height) / 2 + pushLerp.y + 855 - y * 45, // Canvas x, y
 									45, 45 // Canvas width, height
 								);
 							} else if (grid[y][x] >= 8) { // Current/Ghost block
@@ -758,7 +777,7 @@
 								ctx.drawImage(minoTextures,
 									currentBlock.id * 45, 0,
 									45, 45,
-									canvas.width * 0.15 + 264 + x * 45, (canvas.height - board.height) / 2 + 855 - y * 45,
+									canvas.width * 0.1 + pushLerp.x + 264 + x * 45, (canvas.height - board.height) / 2 + pushLerp.y + 855 - y * 45,
 									45, 45
 								);
 								ctx.globalAlpha = 1;
@@ -774,21 +793,21 @@
 								ctx.drawImage(minoTextures,
 									nextBlocks[i] * 45, 0,
 									45, 45,
-									canvas.width * 0.15 + 798 + pos.x * 45, (canvas.height - board.height) / 2 + 93 + i * 135 - pos.y * 45,
+									canvas.width * 0.1 + pushLerp.x + 798 + pos.x * 45, (canvas.height - board.height) / 2 + pushLerp.y + 93 + i * 135 - pos.y * 45,
 									45, 45
 								);
 							} else if (nextBlocks[i] == 3) { // O
 								ctx.drawImage(minoTextures,
 									nextBlocks[i] * 45, 0,
 									45, 45,
-									canvas.width * 0.15 + 798 + pos.x * 45, (canvas.height - board.height) / 2 + 116 + i * 135 - pos.y * 45,
+									canvas.width * 0.1 + pushLerp.x + 798 + pos.x * 45, (canvas.height - board.height) / 2 + pushLerp.y + 116 + i * 135 - pos.y * 45,
 									45, 45
 								);
 							} else { // JLSTZ
 								ctx.drawImage(minoTextures,
 									nextBlocks[i] * 45, 0,
 									45, 45,
-									canvas.width * 0.15 + 820 + pos.x * 45, (canvas.height - board.height) / 2 + 116 + i * 135 - pos.y * 45,
+									canvas.width * 0.1 + pushLerp.x + 820 + pos.x * 45, (canvas.height - board.height) / 2 + pushLerp.y + 116 + i * 135 - pos.y * 45,
 									45, 45
 								);
 							}
@@ -806,21 +825,21 @@
 								ctx.drawImage(minoTextures,
 								currentHoldBlock * 45, 0,
 									45, 45,
-									canvas.width * 0.15 + 71 + pos.x * 45, (canvas.height - board.height) / 2 + 93 - pos.y * 45,
+									canvas.width * 0.1 + pushLerp.x + 71 + pos.x * 45, (canvas.height - board.height) / 2 + pushLerp.y + 93 - pos.y * 45,
 									45, 45
 								);
 							} else if (currentHoldBlock == 3) { // O
 								ctx.drawImage(minoTextures,
 								currentHoldBlock * 45, 0,
 									45, 45,
-									canvas.width * 0.15 + 71 + pos.x * 45, (canvas.height - board.height) / 2 + 116 - pos.y * 45,
+									canvas.width * 0.1 + pushLerp.x + 71 + pos.x * 45, (canvas.height - board.height) / 2 + pushLerp.y + 116 - pos.y * 45,
 									45, 45
 								);
 							} else { // JLSTZ
 								ctx.drawImage(minoTextures,
 								currentHoldBlock * 45, 0,
 									45, 45,
-									canvas.width * 0.15 + 94 + pos.x * 45, (canvas.height - board.height) / 2 + 116 - pos.y * 45,
+									canvas.width * 0.1 + pushLerp.x + 94 + pos.x * 45, (canvas.height - board.height) / 2 + pushLerp.y + 116 - pos.y * 45,
 									45, 45
 								);
 							}
@@ -834,14 +853,14 @@
 					garbageLerp = lerp(garbageLerp, totalGarbage * 45, deltaTime * 5);
 					ctx.fillStyle = "red";
 					ctx.fillRect(
-						canvas.width * 0.15 + 245,
-						(canvas.height - board.height) / 2 + 899 - garbageLerp,
+						canvas.width * 0.1 + pushLerp.x + 245,
+						(canvas.height - board.height) / 2 + pushLerp.y + 899 - garbageLerp,
 						14,
 						garbageLerp
 					);
 
 					// Opponent board
-					ctx.drawImage(board, canvas.width * 0.85 - board.width, (canvas.height - board.height) / 2);
+					ctx.drawImage(board, canvas.width * 0.9 + pushLerp2.x - board.width, (canvas.height - board.height) / 2 + pushLerp2.y);
 
 					if (peerData) {
 						for (let y = 0; y < peerData.grid.length; y++) {
@@ -851,7 +870,7 @@
 									ctx.drawImage(minoTextures,
 										peerData.grid[y][x] * 45, 0,
 										45, 45,
-										canvas.width * 0.85 - board.width + 264 + x * 45, (canvas.height - board.height) / 2 + 855 - y * 45,
+										canvas.width * 0.9 + pushLerp2.x - board.width + 264 + x * 45, (canvas.height - board.height) / 2 + pushLerp2.y + 855 - y * 45,
 										45, 45
 									);
 								} else if (peerData.grid[y][x] >= 8) {
@@ -859,7 +878,7 @@
 									ctx.drawImage(minoTextures,
 										peerData.currentBlock * 45, 0,
 										45, 45,
-										canvas.width * 0.85 - board.width + 264 + x * 45, (canvas.height - board.height) / 2 + 855 - y * 45,
+										canvas.width * 0.9 + pushLerp2.x - board.width + 264 + x * 45, (canvas.height - board.height) / 2 + pushLerp2.y + 855 - y * 45,
 										45, 45
 									);
 									ctx.globalAlpha = 1;
@@ -875,21 +894,21 @@
 									ctx.drawImage(minoTextures,
 										peerData.next[i] * 45, 0,
 										45, 45,
-										canvas.width * 0.85 - board.width + 798 + pos.x * 45, (canvas.height - board.height) / 2 + 93 + i * 135 - pos.y * 45,
+										canvas.width * 0.9 + pushLerp2.x - board.width + 798 + pos.x * 45, (canvas.height - board.height) / 2 + pushLerp2.y + 93 + i * 135 - pos.y * 45,
 										45, 45
 									);
 								} else if (peerData.next[i] == 3) { // O
 									ctx.drawImage(minoTextures,
 										peerData.next[i] * 45, 0,
 										45, 45,
-										canvas.width * 0.85 - board.width + 798 + pos.x * 45, (canvas.height - board.height) / 2 + 116 + i * 135 - pos.y * 45,
+										canvas.width * 0.9 + pushLerp2.x - board.width + 798 + pos.x * 45, (canvas.height - board.height) / 2 + pushLerp2.y + 116 + i * 135 - pos.y * 45,
 										45, 45
 									);
 								} else { // JLSTZ
 									ctx.drawImage(minoTextures,
 										peerData.next[i] * 45, 0,
 										45, 45,
-										canvas.width * 0.85 - board.width + 820 + pos.x * 45, (canvas.height - board.height) / 2 + 116 + i * 135 - pos.y * 45,
+										canvas.width * 0.9 + pushLerp2.x - board.width + 820 + pos.x * 45, (canvas.height - board.height) / 2 + pushLerp2.y + 116 + i * 135 - pos.y * 45,
 										45, 45
 									);
 								}
@@ -907,21 +926,21 @@
 									ctx.drawImage(minoTextures,
 										peerData.hold * 45, 0,
 										45, 45,
-										canvas.width * 0.85 - board.width + 71 + pos.x * 45, (canvas.height - board.height) / 2 + 93 - pos.y * 45,
+										canvas.width * 0.9 + pushLerp2.x - board.width + 71 + pos.x * 45, (canvas.height - board.height) / 2 + pushLerp2.y + 93 - pos.y * 45,
 										45, 45
 									);
 								} else if (peerData.hold == 3) { // O
 									ctx.drawImage(minoTextures,
 										peerData.hold * 45, 0,
 										45, 45,
-										canvas.width * 0.85 - board.width + 71 + pos.x * 45, (canvas.height - board.height) / 2 + 116 - pos.y * 45,
+										canvas.width * 0.9 + pushLerp2.x - board.width + 71 + pos.x * 45, (canvas.height - board.height) / 2 + pushLerp2.y + 116 - pos.y * 45,
 										45, 45
 									);
 								} else { // JLSTZ
 									ctx.drawImage(minoTextures,
 										peerData.hold * 45, 0,
 										45, 45,
-										canvas.width * 0.85 - board.width + 94 + pos.x * 45, (canvas.height - board.height) / 2 + 116 - pos.y * 45,
+										canvas.width * 0.9 + pushLerp2.x - board.width + 94 + pos.x * 45, (canvas.height - board.height) / 2 + pushLerp2.y + 116 - pos.y * 45,
 										45, 45
 									);
 								}
@@ -934,8 +953,8 @@
 						for (let i = 0; i < peerData.garbage.length; i++) {totalGarbage += peerData.garbage[i];}
 						garbageLerp2 = lerp(garbageLerp2, totalGarbage * 45, deltaTime * 5);
 						ctx.fillRect(
-							canvas.width * 0.85 - board.width + 245,
-							(canvas.height - board.height) / 2 + 899 - garbageLerp2,
+							canvas.width * 0.9 + pushLerp2.x - board.width + 245,
+							(canvas.height - board.height) / 2 + pushLerp2.y + 899 - garbageLerp2,
 							14,
 							garbageLerp2
 						);
@@ -976,7 +995,12 @@
 						// Shift block
 						if (Date.now() - shiftDelayTick > shiftDelay && Date.now() - shiftTick > shiftInterval && shiftDir != 0) {
 							shiftTick = Date.now();
-							if (currentBlock.move(new Vector2(shiftDir, 0))) {setLockAction(true);}
+							hasChanged = true;
+							
+							if (currentBlock.move(new Vector2(shiftDir, 0))) {
+								setLockAction(true);
+								pushX = 0;
+							} else {pushX = shiftDir;}
 						}
 
 						// Ghost block
@@ -1015,12 +1039,22 @@
 					shiftDelayTick = Date.now();
 					shiftTick = Date.now();
 					shiftDir = -1;
-					if (currentBlock.move(new Vector2(-1, 0))) {setLockAction(true);}
+					hasChanged = true;
+
+					if (currentBlock.move(new Vector2(-1, 0))) {
+						setLockAction(true);
+						pushX = 0;
+					} else {pushX = -1;}
 				} else if (keyCodes.shiftRight.indexOf(event.code) > -1) {
 					shiftDelayTick = Date.now();
 					shiftTick = Date.now();
 					shiftDir = 1;
-					if (currentBlock.move(new Vector2(1, 0))) {setLockAction(true);}
+					hasChanged = true;
+
+					if (currentBlock.move(new Vector2(1, 0))) {
+						setLockAction(true);
+						pushX = 0;
+					} else {pushX = 1;}
 				} else if (keyCodes.softDrop.indexOf(event.code) > -1) {
 					softDropEnabled = true;
 				} else if (keyCodes.rotateCW.indexOf(event.code) > -1) {
@@ -1044,6 +1078,7 @@
 						if (!currentBlock.move(new Vector2(0, -1))) {
 							lock();
 							hasChanged = true;
+							pushLerp.y = 5;
 							break;
 						}
 					}
@@ -1055,9 +1090,17 @@
 
 			document.addEventListener("keyup", event => {
 				if (keyCodes.shiftLeft.indexOf(event.code) > -1) {
-					shiftDir = shiftDir == -1 ? 0 : 1;
+					if (shiftDir == -1) {
+						hasChanged = true;
+						shiftDir = 0;
+						pushX = 0;
+					}
 				} else if (keyCodes.shiftRight.indexOf(event.code) > -1) {
-					shiftDir = shiftDir == 1 ? 0 : -1;
+					if (shiftDir == 1) {
+						hasChanged = true;
+						shiftDir = 0;
+						pushX = 0;
+					}
 				} else if (keyCodes.softDrop.indexOf(event.code) > -1) {
 					softDropEnabled = false;
 				}
