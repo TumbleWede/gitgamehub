@@ -4,12 +4,10 @@
 		<meta charset="UTF-8">
 		<title>Tetra Battle</title>
 		<link rel="icon" href="assets/favicon/favicon.png" id="favicon">
-		<link rel="preload" href="AzonixRegular.woff2" as="font" type="font/woff2" crossorigin>
 		<style>
 			@font-face {
 				font-family: 'Azonix';
-				src: url('assets/AzonixRegular.woff2') format('woff2'),
-					url('assets/AzonixRegular.woff') format('woff');
+				src: url('assets/AzonixRegular.woff') format('woff');
 				font-weight: normal;
 				font-style: normal;
 				font-display: swap;
@@ -240,9 +238,7 @@
 						setTimeout(() => {
 							if (score == 3) {
 								winStatus = true;
-								setTimeout(() => {
-									toMainMenu();
-								}, 2000);
+								setTimeout(() => {toMainMenu();}, 2000);
 							} else {
 								quit();
 								start();
@@ -667,9 +663,7 @@
 						setTimeout(() => {
 							if (score2 == 3) {
 								winStatus = true;
-								setTimeout(() => {
-									toMainMenu();
-								}, 2000);
+								setTimeout(() => {toMainMenu();}, 2000);
 							} else {
 								quit();
 								start();
@@ -690,9 +684,7 @@
 					setTimeout(() => {
 						if (score2 == 3) {
 							winStatus = true;
-							setTimeout(() => {
-								toMainMenu();
-							}, 2000);
+							setTimeout(() => {toMainMenu();}, 2000);
 						} else {
 							quit();
 							start();
