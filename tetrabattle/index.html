@@ -117,8 +117,8 @@
 			let joinCode;
 
 			// PeerJS
-			const peerId = Math.floor(Math.random() * 8999 + 1000);
-			const peer = new Peer(peerId);
+			let peerId = Math.floor(Math.random() * 8999 + 1000);
+			let peer = new Peer(peerId);
 			let peerData;
 			let conn;
 			let hasChanged = false;
@@ -141,18 +141,25 @@
 					garbageToSend: garbageToSend,
 					gameOver: gameOver,
 					currentBlock: currentBlock.id,
+					score: score,
 					pushX: pushX,
 					pushY: pushLerp.y
 				});
 			}
 
-			function quit() {
+			function toMainMenu() {
+				quit();
 				document.getElementById("menu").hidden = false;
 				document.getElementById("canvas").hidden = true;
 				gameStarted = false;
 				gameOver = true;
+				score = 0;
+				score2 = 0;
+			}
+
+			function quit() {
 				win = null;
-				conn = null;
+				winStatus = false;
 				peerData = null;
 				shiftDir = 0;
 				grid = new Array(40); for (let x = 0; x < grid.length; x++) {grid[x] = new Array(10);}
@@ -179,8 +186,8 @@
 				ready();
 			});
 
-			peer.on("disconnected", () => {quit();});
-			peer.on("close", () => {quit();});
+			peer.on("disconnected", () => {toMainMenu();});
+			peer.on("close", () => {toMainMenu();});
 			peer.on("error", err => {console.log(err);});
 
 			document.getElementById("join-submit").addEventListener("click", () => {
@@ -190,44 +197,61 @@
 				conn.on("open", () => {ready();});
 			});
 
+			function start() {
+				gameOver = false;
+				randomseed(parseInt(joinCode) + score + score2);
+				nextBlocks = [pickRandom(), pickRandom(), pickRandom(), pickRandom(), pickRandom()];
+				currentBlock = new Block(pickNextBlock());
+				currentBlock.set();
+				peerData = {
+					grid: grid.map(arr => arr.slice()),
+					next: [...nextBlocks],
+					hold: currentHoldBlock,
+					canHold: canHold,
+					garbage: [],
+					garbageToSend: 0,
+					gameOver: gameOver,
+					currentBlock: currentBlock.id,
+					score: score2,
+					pushX: 0,
+					pushY: 0
+				};
+			}
+
 			function ready() {
 				peerDataTick = Date.now();
 				document.getElementById("menu").hidden = true;
 				document.getElementById("canvas").hidden = false;
 				gameStarted = true;
-				gameOver = false;
-				randomseed(parseInt(joinCode));
-				nextBlocks = [pickRandom(), pickRandom(), pickRandom(), pickRandom(), pickRandom()];
-				currentBlock = new Block(pickNextBlock());
-				currentBlock.set();
-				peerData = {
-					grid: grid,
-					next: nextBlocks,
-					hold: currentHoldBlock,
-					canHold: canHold,
-					garbage: garbage,
-					garbageToSend: 0,
-					gameOver: gameOver,
-					currentBlock: currentBlock.id,
-					pushX: 0,
-					pushY: 0
-				};
+				start();
 
 				conn.on("data", data => {
 					peerDataTick = Date.now();
 					peerData = data;
 					pushX2 = peerData.pushX;
 					pushLerp2.y = peerData.pushY;
+					score2 = peerData.score;
 					if (peerData.garbageToSend > 0) {garbage.push(peerData.garbageToSend);}
 					if (!peerData.canHold) {canHoldAlphaLerp2 = 0.25;}
 					if (peerData.gameOver) {
 						win = true;
+						score++;
 						gameOver = true;
-						setTimeout(() => {quit()}, 5000);
+						setTimeout(() => {
+							if (score == 3) {
+								winStatus = true;
+								setTimeout(() => {
+									toMainMenu();
+								}, 2000);
+							} else {
+								quit();
+								start();
+							}
+						}, 2000);
 					}
 				});
 
-				conn.on("close", () => {quit();});
+				conn.on("close", () => {toMainMenu();});
 			}
 
 			// Update canvas size
@@ -629,31 +653,55 @@
 
 				currentBlock.empty();
 				let cells = currentBlock.getCells();
-				
+
 				for (let i = 0; i < cells.length; i++) {
 					let pos = cells[i];
 					grid[pos.y][pos.x] = currentBlock.id;
 
-					if (cells[i].y > 21) {
+					if (cells[i].y > 20) {
 						gameOver = true;
 						win = false;
+						score2++;
+						currentBlock.set();
 						sendBoardData();
-						setTimeout(() => {quit()}, 5000);
+						setTimeout(() => {
+							if (score2 == 3) {
+								winStatus = true;
+								setTimeout(() => {
+									toMainMenu();
+								}, 2000);
+							} else {
+								quit();
+								start();
+							}
+						}, 2000);
+						return;
 					}
 				}
 
 				let cleared = clearFullRows();
-				sendBoardData(cleared);
 				currentBlock = new Block(pickNextBlock());
 
 				if (!currentBlock.isValid()) {
 					gameOver = true;
 					win = false;
+					score2++;
 					sendBoardData();
-					setTimeout(() => {quit()}, 5000);
+					setTimeout(() => {
+						if (score2 == 3) {
+							winStatus = true;
+							setTimeout(() => {
+								toMainMenu();
+							}, 2000);
+						} else {
+							quit();
+							start();
+						}
+					}, 2000);
 					return;
 				}
 
+				sendBoardData(cleared);
 				currentBlock.set();
 				canHold = true;
 				tSpin = false;
@@ -729,10 +777,15 @@
 			let lockEnabled = false;
 
 			let grid = new Array(40); for (let x = 0; x < grid.length; x++) {grid[x] = new Array(10);}
+			let currentBlock;
+			let score = 0;
+			let score2 = 0;
+			let winStatus = false;
+
 			let garbage = [];
 			let garbageLerp = 0;
 			let garbageLerp2 = 0;
-			let combo = 0;
+
 			let tSpin = 0; // 0 = None; 1 = Mini T-Spin; 2 = T-Spin
 			let lastAttackType;
 
@@ -744,23 +797,20 @@
 			const board = new Image(); board.src = "assets/board.png";
 			const minoTextures = new Image(); minoTextures.src = "assets/minos.png";
 
-			let currentBlock;
-
 			function render() {
 				// deltaTime
 				let now = Date.now();
 				deltaTime = (now - lastUpdate) / 1000;
 				lastUpdate = now;
-				pushLerp.x = lerp(pushLerp.x, pushX * 5, deltaTime * 5);
-				pushLerp.y = lerp(pushLerp.y, 0, deltaTime * 5);
-				pushLerp2.x = lerp(pushLerp2.x, pushX2 * 5, deltaTime * 5);
-				pushLerp2.y = lerp(pushLerp2.y, 0, deltaTime * 5);
+				pushLerp.x = clamp(lerp(pushLerp.x, pushX * 5, deltaTime * 5), -5, 5);
+				pushLerp.y = clamp(lerp(pushLerp.y, 0, deltaTime * 5), -5, 5);
+				pushLerp2.x = clamp(lerp(pushLerp2.x, pushX2 * 5, deltaTime * 5), -5, 5);
+				pushLerp2.y = clamp(lerp(pushLerp2.y, 0, deltaTime * 5), -5, 5);
 				ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
 
 				// Player board
 				if (gameStarted) {
 					// Grid
-
 					ctx.drawImage(board, canvas.width * 0.1 + pushLerp.x, (canvas.height - board.height) / 2 + pushLerp.y);
 
 					for (let y = 0; y < grid.length; y++) {
@@ -958,17 +1008,32 @@
 							14,
 							garbageLerp2
 						);
-					}
 
-					if (gameOver && win != null) {
+						// Score
 						ctx.font = "100px Azonix";
 						ctx.textAlign = "center";
 						ctx.textBaseline = "middle";
-						ctx.fillStyle = win ? "lime" : "red";
-						ctx.fillText(win ? "Win" : "Lose", canvas.width / 2, canvas.height / 2);
+						ctx.lineWidth = 4;
+						ctx.fillStyle = "white";
+						ctx.fillText(score + " - " + score2, canvas.width / 2, canvas.height / 2 + 500);
 						ctx.fillStyle = "black";
-						ctx.lineWidth = 2;
-						ctx.strokeText(win ? "Win" : "Lose", canvas.width / 2, canvas.height / 2);
+						ctx.strokeText(score + " - " + score2, canvas.width / 2, canvas.height / 2 + 500);
+					}
+
+					if (gameOver && win != null) {
+						ctx.font = "150px Azonix";
+
+						if (winStatus) {
+							ctx.fillStyle = "white";
+							ctx.fillText("game over", canvas.width / 2, canvas.height / 2);
+							ctx.fillStyle = "black";
+							ctx.strokeText("game over", canvas.width / 2, canvas.height / 2);
+						} else {
+							ctx.fillStyle = win ? "lime" : "red";
+							ctx.fillText(win ? "win" : "lose", canvas.width / 2, canvas.height / 2);
+							ctx.fillStyle = "black";
+							ctx.strokeText(win ? "win" : "lose", canvas.width / 2, canvas.height / 2);
+						}
 					}
 				}
 			}
@@ -996,7 +1061,7 @@
 						if (Date.now() - shiftDelayTick > shiftDelay && Date.now() - shiftTick > shiftInterval && shiftDir != 0) {
 							shiftTick = Date.now();
 							hasChanged = true;
-							
+
 							if (currentBlock.move(new Vector2(shiftDir, 0))) {
 								setLockAction(true);
 								pushX = 0;
@@ -1024,12 +1089,12 @@
 						
 						fallInterval = Math.max(fallInterval - deltaTime * 2, 25)
 						if (lockEnabled && (Date.now() - lockTick > lockInterval || lockActions > lockMaxActions)) {lock();} // Lock block
-						if (Date.now() - peerDataTick > 5000 && conn) {conn.close();}
+						if (Date.now() - peerDataTick > 5000 && conn) {conn.close();} // Close the game if the opponent disconnects
+						if (hasChanged) {sendBoardData();}
+						hasChanged = false;
 					}
 				}
 
-				if (hasChanged) {sendBoardData();}
-				hasChanged = false;
 				render();
 			}
 
