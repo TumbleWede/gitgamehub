@@ -649,12 +649,19 @@
 
 				currentBlock.empty();
 				let cells = currentBlock.getCells();
+				let partiallyInGrid = false;
+
+				for (let i = 0; i < cells.length; i++) {
+					let pos = cells[i];
+					if (pos.y < 20) {partiallyInGrid = true;}
+				}
+
 
 				for (let i = 0; i < cells.length; i++) {
 					let pos = cells[i];
 					grid[pos.y][pos.x] = currentBlock.id;
 
-					if (cells[i].y > 20) {
+					if (cells[i].y > 21 || !partiallyInGrid) {
 						gameOver = true;
 						win = false;
 						score2++;
