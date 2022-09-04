@@ -175,6 +175,10 @@
 					this.x = x,
 					this.y = y
 				}
+
+				get distance() {
+					return Math.sqrt(this.x * this.x + this.y * this.y);
+				}
 			}
 
 			function updateWindow() {
@@ -242,7 +246,7 @@
 				// Bounce ball on edges
 				if (Math.abs(canvas.height / 2 - ball.y) > canvas.height / 2 - PIXEL_SIZE / 2) {
 					audio.bounce.play();
-					ball.dir.y = Math.sign(ball.dir.y * -1);
+					ball.dir.y *= -1
 					ball.y = clamp(ball.y, PIXEL_SIZE / 2, canvas.height - PIXEL_SIZE / 2);
 				}
 				
