@@ -116,12 +116,11 @@
 
 			// PeerJS
 			let peerId = Math.floor(Math.random() * 8999 + 1000);
-			let peer = new Peer(peerId);
+			let peer = new Peer(peerId); peerHandler(peer);
 			let peerData;
 			let conn;
 			let hasChanged = false;
 			let peerDataTick = Date.now(); // We will close the connection after 5 seconds of no data in case the person closed out of the tab
-			document.getElementById("host-id").innerHTML = "code: " + peerId;
 
 			let rng;
 			function randomseed(seed) {
@@ -146,6 +145,7 @@
 			}
 
 			function toMainMenu() {
+				/*
 				quit();
 				document.getElementById("menu").hidden = false;
 				document.getElementById("canvas").hidden = true;
@@ -153,6 +153,8 @@
 				gameOver = true;
 				score = 0;
 				score2 = 0;
+				*/
+				location.reload();
 			}
 
 			function quit() {
@@ -173,20 +175,24 @@
 			}
 
 			// Host the game
-			peer.on("connection", (c) => {
-				if (conn && conn.open) {
-					c.on("open", () => {c.close();});
-					return;
-				}
+			function peerHandler(peer) {
+				document.getElementById("host-id").innerHTML = "code: " + peerId;
 
-				conn = c;
-				joinCode = peerId;
-				ready();
-			});
+				peer.on("connection", (c) => {
+					if (conn && conn.open) {
+						c.on("open", () => {c.close();});
+						return;
+					}
 
-			peer.on("disconnected", () => {toMainMenu();});
-			peer.on("close", () => {toMainMenu();});
-			peer.on("error", err => {console.log(err);});
+					conn = c;
+					joinCode = peerId;
+					ready();
+				});
+
+				peer.on("disconnected", () => {toMainMenu();});
+				peer.on("close", () => {toMainMenu();});
+				peer.on("error", err => {console.log(err);});
+			}
 
 			document.getElementById("join-submit").addEventListener("click", () => {
 				joinCode = document.getElementById("join-code").value;
