@@ -1,10 +1,64 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>GitGames</title>
+		<title>Git Game Hub</title>
+		<link rel="icon" href="assets/favicon.png" id="favicon">
+		<style>
+			@font-face {
+				font-family: "Courier Prime Code";
+				src: url("assets/courier.ttf");
+			}
+
+			html, body {
+				background: #0f0f0f;
+				padding: 0;
+			}
+
+			a, h1 {
+				font-size: 30px;
+				font-family: "Courier Prime Code";
+				color: white;
+			}
+
+			h1 {
+				font-size: 40px;
+				margin: auto 8px;
+			}
+
+			img {
+				width: 60px;
+				text-align: center;
+			}
+
+			#logo {
+				display: flex;
+				height: 60px;
+			}
+		</style>
 	</head>
 	<body>
-		<a href="https://tumblewede.github.io/pong/">Play Pong</a><br>
-		<a href="https://tumblewede.github.io/tetrabattle/">Play Tetra Battle</a>
+		<div id="logo">
+			<img src="assets/logo.png">
+			<h1 class="typing">Git_Game_Hub</h1>
+		</div>
+		<div>
+			<a href="https://tumblewede.github.io/pong/" class="typing">Play Pong</a><br>
+			<a href="https://tumblewede.github.io/tetrabattle/" class="typing">Play Tetra Battle</a><br>
+		</div>
+		<script>
+			function typeWriter(element, text, i) {
+				if (i == 0) {element.innerHTML = "";}
+				if (i < text.length) {
+					element.innerHTML += text.charAt(i);
+					i++
+					setTimeout(() => {typeWriter(element, text, i);}, 20);
+				}
+			}
+
+			for (let i = 0; i < document.getElementsByClassName("typing").length; i++) {
+				let j = 0;
+				typeWriter(document.getElementsByClassName("typing")[i], document.getElementsByClassName("typing")[i].innerHTML, j);
+			}
+ 		</script>
 	</body>
 </html>
