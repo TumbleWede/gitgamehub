@@ -104,27 +104,27 @@ function addCircle(x, player) {
 				debounce = false;
 
 				// Check for win
-			if (isWin(player)) {
-			text = (player == 1 ? "Red" : "Yellow") + " Won!";
-			debounce = true;
-			
-			// Reset game
-			setTimeout(() => {
-				for (let x = 0; x < 7; x++) {
-				for (let y = 0; y < 6; y++) {
-					grid[x][y] = undefined;
-				}
+				if (isWin(player)) {
+					text = (player == 1 ? "Red" : "Yellow") + " Won!";
+					debounce = true;
+					
+					// Reset game
+					setTimeout(() => {
+						for (let x = 0; x < 7; x++) {
+							for (let y = 0; y < 6; y++) {
+								grid[x][y] = undefined;
+							}
+						}
+						
+						debounce = false;
+								text = "";
+						currentPlayer = player == 1 ? 2 : 1; // Change current player
+					}, 3000);
+					return;
 				}
 				
-				debounce = false;
-						text = "";
-				currentPlayer = player == 1 ? 2 : 1; // Change current player
-			}, 3000);
-			return;
-			}
-			
-			// Change current player
-			currentPlayer = player == 1 ? 2 : 1;
+				// Change current player
+				currentPlayer = player == 1 ? 2 : 1;
 			});
 			return;
 		}
@@ -148,6 +148,10 @@ canvas.onmousemove = (event) => {
 };
 
 let lastTime = 0;
+const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+gradient.addColorStop(0, "#4475a5");
+gradient.addColorStop(1, "#0026a0");
+
 function update(timestamp) {
 	// Delta time
 	const deltaTime = (timestamp - lastTime) || 0;
@@ -155,11 +159,13 @@ function update(timestamp) {
 	lastTime = timestamp;
 	previewLerpX = lerp(previewLerpX, previewX * 200, deltaTime * 0.02);
 	ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+	ctx.fillStyle = gradient;
+	ctx.fillRect(20, 220, canvas.width - 20, canvas.height - 20);
 	
 	for (let x = 0; x < 7; x++) {
-	for (let y = 0; y < 6; y++) {
-		drawCircle(x, y, grid[x][y]);
-	}
+		for (let y = 0; y < 6; y++) {
+			drawCircle(x, y, grid[x][y]);
+		}
 	}
 
 	if (animate) {ctx.drawImage(currentPlayer == 1 ? circleRed : circleYellow, animPos.x * 200, animPos.y);}
