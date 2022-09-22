@@ -74,7 +74,7 @@ function isWin(player) {
 			}
 			
 			// 4 diagonal up right
-			if (y < 3 && x < 5 && grid[x][y] == player &&
+			if (y < 3 && x < 4 && grid[x][y] == player &&
 				grid[x + 1][y + 1] == player &&
 				grid[x + 2][y + 2] == player &&
 				grid[x + 3][y + 3] == player) {
@@ -82,7 +82,7 @@ function isWin(player) {
 			}
 			
 			// 4 diagonal bottom right
-			if (y < 3 && x < 5 && grid[x][y + 3] == player &&
+			if (y < 3 && x < 4 && grid[x][y + 3] == player &&
 				grid[x + 1][y + 2] == player &&
 				grid[x + 2][y + 1] == player &&
 				grid[x + 3][y] == player) {
