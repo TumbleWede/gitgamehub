@@ -5,6 +5,7 @@ const ctx = canvas.getContext("2d");
 const board = new Image(); board.src = "assets/board.png";
 const circleRed = new Image(); circleRed.src = "assets/circleRed.png";
 const circleYellow = new Image(); circleYellow.src = "assets/circleYellow.png";
+const star = new Image(); star.src = "assets/star.png";
 
 // Update canvas size on resize
 canvas.width = 1400;
@@ -36,6 +37,7 @@ const grid = new Array(7); for (let x = 0; x < 7; x++) {grid[x] = new Array(6);}
 let currentPlayer = 1;
 let text = "";
 let debounce = false;
+let winCircles = [];
 
 // Circle animation
 let animate = false;
@@ -62,7 +64,13 @@ function isWin(player) {
 				grid[x][y + 1] == player &&
 				grid[x][y + 2] == player &&
 				grid[x][y + 3] == player) {
-			return true;
+				winCircles = [
+					{x: x, y: y},
+					{x: x, y: y + 1},
+					{x: x, y: y + 2},
+					{x: x, y: y + 3}
+				];
+				return true;
 			}
 			
 			// 4 right
@@ -70,7 +78,13 @@ function isWin(player) {
 				grid[x + 1][y] == player &&
 				grid[x + 2][y] == player &&
 				grid[x + 3][y] == player) {
-			return true;
+				winCircles = [
+					{x: x, y: y},
+					{x: x + 1, y: y},
+					{x: x + 2, y: y},
+					{x: x + 3, y: y}
+				];
+				return true;
 			}
 			
 			// 4 diagonal up right
@@ -78,7 +92,13 @@ function isWin(player) {
 				grid[x + 1][y + 1] == player &&
 				grid[x + 2][y + 2] == player &&
 				grid[x + 3][y + 3] == player) {
-			return true;
+				winCircles = [
+					{x: x, y: y},
+					{x: x + 1, y: y + 1},
+					{x: x + 2, y: y + 2},
+					{x: x + 3, y: y + 3}
+				];
+				return true;
 			}
 			
 			// 4 diagonal bottom right
@@ -86,7 +106,13 @@ function isWin(player) {
 				grid[x + 1][y + 2] == player &&
 				grid[x + 2][y + 1] == player &&
 				grid[x + 3][y] == player) {
-			return true;
+				winCircles = [
+					{x: x, y: y + 3},
+					{x: x + 1, y: y + 2},
+					{x: x + 2, y: y + 1},
+					{x: x + 3, y: y}
+				];
+				return true;
 			}
 		}
 	}
@@ -117,7 +143,8 @@ function addCircle(x, player) {
 						}
 						
 						debounce = false;
-								text = "";
+						text = "";
+						winCircles = [];
 						currentPlayer = player == 1 ? 2 : 1; // Change current player
 					}, 3000);
 					return;
@@ -144,7 +171,7 @@ canvas.onmousemove = (event) => {
 	// Get cell the player clicked on
 	const rect = event.target.getBoundingClientRect()
 	const clientX = event.clientX - rect.left;
-	previewX = Math.floor(clientX / rect.width * 7);
+	previewX = Math.max(Math.floor(clientX / rect.width * 7), 0);
 };
 
 let lastTime = 0;
@@ -168,11 +195,12 @@ function update(timestamp) {
 		}
 	}
 
-	if (animate) {ctx.drawImage(currentPlayer == 1 ? circleRed : circleYellow, animPos.x * 200, animPos.y);}
-	
-	if (!debounce) {
-		ctx.drawImage(currentPlayer == 1 ? circleRed : circleYellow, previewLerpX, 0);
+	for (let i = 0; i < winCircles.length; i++) {
+		ctx.drawImage(star, winCircles[i].x * 200, 1200 - winCircles[i].y * 200);
 	}
+
+	if (animate) {ctx.drawImage(currentPlayer == 1 ? circleRed : circleYellow, animPos.x * 200, animPos.y);}
+	if (!debounce) {ctx.drawImage(currentPlayer == 1 ? circleRed : circleYellow, previewLerpX, 0);}
 	
 	// Draw text
 	ctx.font = "70px monospace";
