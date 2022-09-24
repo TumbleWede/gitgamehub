@@ -32,6 +32,8 @@ let debounce = false;
 let text = "";
 let textPlayer = 0;
 let animatedDisks = [];
+let ghostSize = 200;
+let ghostLerp = 200;
 const grid = new Array(8); for (let x = 0; x < 8; x++) {grid[x] = new Array(8);}
 grid[3][3] = 1;
 grid[4][3] = 2;
@@ -43,8 +45,12 @@ function canReverse(x, y, adjacent) {
 		const x2 = x + adjacent.x * j;
 		const y2 = y + adjacent.y * j;
 
-		if (grid[x2] && grid[x2][y2] && grid[x2][y2] == currentPlayer) {
-			return true;
+		if (grid[x2] && grid[x2][y2]) {
+			if (grid[x2][y2] == currentPlayer) {
+				return true;
+			}
+		} else {
+			return false;
 		}
 	}
 }
@@ -86,7 +92,7 @@ function placeCell(x, y) {
 			if (grid[x2] && grid[x2][y2]) {
 				if (grid[x2][y2] == currentPlayer) {
 					break;
-				} else {
+				} else if (grid[x2][y2]) {
 					grid[x2][y2] = currentPlayer;
 				}
 			}
@@ -132,14 +138,36 @@ function getWinner() {
 }
 
 function reset() {
-	debounce = false;
-	text = "";
-	currentPlayer = currentPlayer == 1 ? 2 : 1;
+	for (let x = 0; x < 8; x++) {
+		for (let y = 0; y < 8; y++) {
+			if (grid[x][y]) {
+				animatedDisks.push({x: x, y: y, size: 200, targetSize: 0, id: grid[x][y]});
+			}
+		}
+	}
+
 	for (let x = 0; x < 8; x++) {grid[x] = new Array(8);}
-	grid[3][3] = currentPlayer;
-	grid[4][3] = currentPlayer == 1 ? 2 : 1;
-	grid[3][4] = currentPlayer == 1 ? 2 : 1;
-	grid[4][4] = currentPlayer;
+	text = "";
+
+	setTimeout(() => {
+		animatedDisks = [];
+		currentPlayer = currentPlayer == 1 ? 2 : 1;
+		animatedDisks.push({x: 3, y: 3, size: 0, targetSize: 200, id: currentPlayer});
+		animatedDisks.push({x: 4, y: 3, size: 0, targetSize: 200, id: currentPlayer == 1 ? 2 : 1});
+		animatedDisks.push({x: 3, y: 4, size: 0, targetSize: 200, id: currentPlayer == 1 ? 2 : 1});
+		animatedDisks.push({x: 4, y: 4, size: 0, targetSize: 200, id: currentPlayer});
+
+		setTimeout(() => {
+			animatedDisks = [];
+			debounce = false;
+			ghostSize = 200;
+			ghostLerp = 0;
+			grid[3][3] = currentPlayer;
+			grid[4][3] = currentPlayer == 1 ? 2 : 1;
+			grid[3][4] = currentPlayer == 1 ? 2 : 1;
+			grid[4][4] = currentPlayer;
+		}, 500);
+	}, 500);
 }
 
 canvas.onclick = (event) => {
@@ -151,8 +179,9 @@ canvas.onclick = (event) => {
 
 	if (canPlace(x, y)) {
 		const adjacentCells = getAdjacentCells(x, y);
-		animatedDisks.push({x: x, y: y, size: 0});
+		animatedDisks.push({x: x, y: y, size: 0, targetSize: 200, id: currentPlayer});
 		debounce = true;
+		ghostSize = 0;
 		
 		for (let i = 0; i < adjacentCells.length; i++) {
 			for (let j = 1; j < 8; j++) {
@@ -163,7 +192,7 @@ canvas.onclick = (event) => {
 					if (grid[x2][y2] == currentPlayer) {
 						break;
 					} else {
-						animatedDisks.push({x: x2, y: y2, size: 0});
+						animatedDisks.push({x: x2, y: y2, size: 0, targetSize: 200, id: currentPlayer});
 					}
 				}
 			}
@@ -174,6 +203,7 @@ canvas.onclick = (event) => {
 			placeCell(x, y);
 			currentPlayer = currentPlayer == 1 ? 2 : 1;
 			debounce = false;
+			ghostSize = 200;
 
 			if (canSkip() & !debounce) {
 				currentPlayer = currentPlayer == 1 ? 2 : 1;
@@ -193,7 +223,7 @@ canvas.onclick = (event) => {
 					setTimeout(reset, 3000);
 				} else {
 					text = (currentPlayer == 1 ? "White" : "Black") + " Cannot Play";
-					textPlayer = currentPlayer;
+					textPlayer = currentPlayer == 1 ? 2 : 1;
 					setTimeout(() => {
 						debounce = false;
 						text = "";
@@ -209,6 +239,7 @@ function update(time) {
 	lastTime = time;
 	ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
 	ctx.drawImage(board, 0, 0)
+	ghostLerp = lerp(ghostLerp, ghostSize, deltaTime / 100);
 
 	for (let x = 0; x < 8; x++) {
 		for (let y = 0; y < 8; y++) {
@@ -217,7 +248,13 @@ function update(time) {
 			} else {
 				if (canPlace(x, y)) {
 					ctx.globalAlpha = 0.25;
-					ctx.drawImage(currentPlayer == 1 ? black : white, x * 200, y * 200);
+					ctx.drawImage(
+						currentPlayer == 1 ? black : white, // Image
+						x * 200 + (100 - ghostLerp / 2), // X
+						y * 200 + (100 - ghostLerp / 2), // Y
+						ghostLerp, // Width
+						ghostLerp // Height
+					);
 					ctx.globalAlpha = 1;
 				}
 			}
@@ -225,13 +262,14 @@ function update(time) {
 	}
 
 	for (let i = 0; i < animatedDisks.length; i++) {
-		animatedDisks[i].size = lerp(animatedDisks[i].size, 200, deltaTime / 100);
+		animatedDisks[i].size = lerp(animatedDisks[i].size, animatedDisks[i].targetSize, deltaTime / 100);
+
 		ctx.drawImage(
-			currentPlayer == 1 ? black : white, // Image
-			animatedDisks[i].x * 200 + (100 - animatedDisks[i].size / 2), // X
-			animatedDisks[i].y * 200 + (100 - animatedDisks[i].size / 2), // Y
-			animatedDisks[i].size, // Width
-			animatedDisks[i].size // Height
+			animatedDisks[i].id == 1 ? black : white,
+			animatedDisks[i].x * 200 + (100 - animatedDisks[i].size / 2),
+			animatedDisks[i].y * 200 + (100 - animatedDisks[i].size / 2),
+			animatedDisks[i].size,
+			animatedDisks[i].size
 		);
 	}
 
