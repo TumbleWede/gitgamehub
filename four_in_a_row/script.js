@@ -213,4 +213,4 @@ function update(timestamp) {
 	window.requestAnimationFrame(update); // Refresh update function on next frame
 }
 
-update();
+update(0);
