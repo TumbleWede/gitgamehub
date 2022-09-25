@@ -34,6 +34,8 @@ let textPlayer = 0;
 let animatedDisks = [];
 let ghostSize = 200;
 let ghostLerp = 200;
+let textLerp = 0;
+let textSize = 0;
 const grid = new Array(8); for (let x = 0; x < 8; x++) {grid[x] = new Array(8);}
 grid[3][3] = 1;
 grid[4][3] = 2;
@@ -147,7 +149,7 @@ function reset() {
 	}
 
 	for (let x = 0; x < 8; x++) {grid[x] = new Array(8);}
-	text = "";
+	textSize = 0;
 
 	setTimeout(() => {
 		animatedDisks = [];
@@ -208,6 +210,7 @@ canvas.onclick = (event) => {
 			if (canSkip() & !debounce) {
 				currentPlayer = currentPlayer == 1 ? 2 : 1;
 				debounce = true;
+				textSize = 160;
 
 				if (canSkip()) { // Game over - can't place anymore pieces
 					const winner = getWinner();
@@ -226,7 +229,7 @@ canvas.onclick = (event) => {
 					textPlayer = currentPlayer == 1 ? 2 : 1;
 					setTimeout(() => {
 						debounce = false;
-						text = "";
+						textSize = 0;
 					}, 1500);
 				}
 			}
@@ -240,6 +243,7 @@ function update(time) {
 	ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
 	ctx.drawImage(board, 0, 0)
 	ghostLerp = lerp(ghostLerp, ghostSize, deltaTime / 100);
+	textLerp = lerp(textLerp, textSize, deltaTime / 100);
 
 	for (let x = 0; x < 8; x++) {
 		for (let y = 0; y < 8; y++) {
@@ -275,12 +279,12 @@ function update(time) {
 
 	if (text != "") {
 		// Draw text
-		ctx.font = "160px Trebuchet MS";
+		ctx.font = textLerp + "px Trebuchet MS";
 		ctx.textAlign = "center";
 		ctx.textBaseline = "middle";
 		ctx.fillStyle = textPlayer == 1 ? "black" : "white";
 		ctx.fillText(text, canvas.width / 2, canvas.height / 2);
-		ctx.lineWidth = 4;
+		ctx.lineWidth = textLerp / 40;
 		ctx.strokeStyle = textPlayer == 1 ? "white" : "black";
 		ctx.strokeText(text, canvas.width / 2, canvas.height / 2);
 	}
