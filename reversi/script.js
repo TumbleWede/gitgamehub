@@ -60,7 +60,7 @@ function getAdjacentCells(x, y) {
 
 	for (x2 = -1; x2 < 2; x2++) {
 		for (y2 = -1; y2 < 2; y2++) {
-			if (!(x == x2 && y == y2) && grid[x + x2] && grid[x + x2][y + y2]) {
+			if (!(x2 == 0 && y2 == 0) && grid[x + x2] && grid[x + x2][y + y2]) {
 				if (grid[x + x2][y + y2] && grid[x + x2][y + y2] != currentPlayer && canReverse(x, y, {x: x2, y: y2})) {
 					adjacent.push({x: x2, y: y2});
 				}
