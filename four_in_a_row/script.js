@@ -169,7 +169,7 @@ canvas.onclick = (event) => {
 
 canvas.onmousemove = (event) => {
 	// Get cell the player clicked on
-	const rect = event.target.getBoundingClientRect()
+	const rect = event.target.getBoundingClientRect();
 	const clientX = event.clientX - rect.left;
 	previewX = Math.max(Math.floor(clientX / rect.width * 7), 0);
 };
