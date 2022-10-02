@@ -175,7 +175,7 @@ function reset() {
 canvas.onclick = (event) => {
 	if (debounce) {return;}
 	// Get cell the player clicked on
-	const rect = event.target.getBoundingClientRect();
+	const rect = event.target.getBoundingClientRect()
 	const x = Math.max(Math.floor((event.clientX - rect.left) / rect.width * 8), 0);
 	const y = Math.floor((event.clientY - rect.top) / rect.height * 8);
 
