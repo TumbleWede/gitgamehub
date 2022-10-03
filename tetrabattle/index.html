@@ -49,7 +49,7 @@
 				transition: 0.1s;
 			}
 
-			.join:hover, button:hover {
+			input:hover, button:hover {
 				background-color: #111111;
 				transition: 0.1s;
 			}
@@ -62,17 +62,27 @@
 				font-size: 25px;
 			}
 
+			.settings {
+				background: black;
+				width: 150px;
+				height: 30px;
+				padding: 0;
+				font-size: 25px;
+				margin: 10px;
+			}
+
 			.bevel {
 				border: 2px solid;
 				border-image: url("assets/border.svg") 33%;
 			}
 
 			#menu {
-				margin: 0;
 				position: absolute;
-				left: 50%;
-				top: 25%;
-				transform: translateX(-50%);
+				margin: auto;
+				left: 0;
+				right: 0;
+				top: 50%;
+				transform: translateY(-50%);
 			}
 		</style>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
@@ -88,7 +98,7 @@
 			<h2 id="host-id" hidden></h2>
 			<div id="join-id" hidden>
 				<br><input type="text" id="join-code" maxlength="4" class="bevel join">
-				<input type="button" value="go" id="join-submit" maxlength="4" class="bevel join" style="width: 75px;">
+				<input type="button" value="go" id="join-submit" class="bevel join" style="width: 75px;">
 			</div>
 		</div>
 		<canvas id="canvas" hidden></canvas>
@@ -100,8 +110,8 @@
 			}
 
 			function joinButtonOnClick() {
-				document.getElementById("join-id").hidden = false;
 				document.getElementById("host-id").hidden = true;
+				document.getElementById("join-id").hidden = false;
 			}
 
 			(() => { // Scope functions and variables to prevent it from being modified on the brower console
@@ -771,8 +781,8 @@
 			const softDropScalar = 20;
 			let softDropEnabled = false;
 
-			const shiftDelay = 150;
-			const shiftInterval = 30;
+			const shiftDelay = 250;
+			const shiftInterval = 50;
 			let shiftDelayTick = Date.now();
 			let shiftTick = Date.now();
 			let shiftDir = 0;
@@ -1106,7 +1116,7 @@
 			}
 
 			document.addEventListener("keydown", event => {
-				if (gameOver) {return;}
+				if (gameOver || event.repeat) {return;}
 				if (keyCodes.shiftLeft.indexOf(event.code) > -1) {
 					shiftDelayTick = Date.now();
 					shiftTick = Date.now();
