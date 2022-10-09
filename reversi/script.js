@@ -16,11 +16,9 @@ function updateWindow() {
 	if (window.innerWidth / window.innerHeight < canvas.width / canvas.height) {
 		canvas.style.width = "100%";
 		canvas.style.height = null;
-		max = canvas.style.width;
 	} else {
 		canvas.style.width = null;
 		canvas.style.height = "100%";
-		max = canvas.style.height;
 	}
 }
 
