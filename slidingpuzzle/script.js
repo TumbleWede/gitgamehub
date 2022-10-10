@@ -135,6 +135,7 @@ canvas.onclick = (event) => {
 				debounce = false;
 				loading = true;
 				j = 0
+				updateWindow();
 				scrambleGrid(size - 1, size - 1);
 			}, 1000);
 		}
