@@ -1,16 +1,16 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const params = new URLSearchParams(window.location.search);
-let size = Math.min(Math.max(parseInt(params.get("size")), 3), 32) || 3;
-let grid = newGrid();
+let size = Math.min(Math.max(parseInt(params.get("size")), 3), 32) || localStorage.sp_s || 3;
+let grid = localStorage.sp_s == size && JSON.parse(localStorage.sp_g) || newGrid();
 let solvedGrid = newGrid();
 let animatedCells = [];
 let last = 0;
 let deltaTime = 0;
-let debounce = false;
-let loading = true;
+let debounce = localStorage.sp_s == size && true || false;
+let loading = localStorage.sp_s != size && true || false;
 let j = 0
-scrambleGrid(size - 1, size - 1);
+if (localStorage.sp_s != size) {scrambleGrid(size - 1, size - 1);}
 
 canvas.width = 1000;
 canvas.height = 1000;
@@ -88,6 +88,8 @@ function scrambleGrid(x, y) {
 		} else {
 			debounce = true;
 			loading = false;
+			localStorage.sp_g = JSON.stringify(grid);
+			localStorage.sp_s = size;
 		}
 	});
 }
@@ -139,6 +141,9 @@ canvas.onclick = (event) => {
 				scrambleGrid(size - 1, size - 1);
 			}, 1000);
 		}
+
+		localStorage.sp_g = JSON.stringify(grid);
+		localStorage.sp_s = size;
 	}
 }
 
