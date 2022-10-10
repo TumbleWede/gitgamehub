@@ -175,7 +175,7 @@ canvas.onclick = (event) => {
 	// Get cell the player clicked on
 	const rect = event.target.getBoundingClientRect()
 	const x = Math.max(Math.floor((event.clientX - rect.left) / rect.width * 8), 0);
-	const y = Math.floor((event.clientY - rect.top) / rect.height * 8);
+	const y = Math.max(Math.floor((event.clientY - rect.top) / rect.height * 8), 0);
 
 	if (canPlace(x, y)) {
 		const adjacentCells = getAdjacentCells(x, y);

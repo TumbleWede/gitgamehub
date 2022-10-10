@@ -1,0 +1,16 @@
+body {
+	margin: 0;
+	background-image: url("bg.png");
+	background-position-x: center;
+	image-rendering: pixelated;
+}
+
+canvas {
+	image-rendering: auto;
+	position: absolute;
+	margin: auto;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+}
