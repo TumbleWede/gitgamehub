@@ -131,7 +131,7 @@ canvas.onclick = (event) => {
 		if (solved()) {
 			debounce = false;
 			setTimeout(() => {
-				size = math.min(size + 1, 10);
+				size = Math.min(size + 1, 10);
 				grid = newGrid();
 				solvedGrid = newGrid();
 				debounce = false;
