@@ -1,7 +1,7 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const params = new URLSearchParams(window.location.search);
-let size = Math.min(Math.max(parseInt(params.get("size")), 3), 32) || localStorage.sp_s || 3;
+let size = Math.min(Math.max(parseInt(params.get("size")), 3), 10) || localStorage.sp_s || 3;
 let grid = localStorage.sp_s == size && JSON.parse(localStorage.sp_g) || newGrid();
 let solvedGrid = newGrid();
 let animatedCells = [];
@@ -131,7 +131,7 @@ canvas.onclick = (event) => {
 		if (solved()) {
 			debounce = false;
 			setTimeout(() => {
-				size++;
+				size = math.min(size + 1, 10);
 				grid = newGrid();
 				solvedGrid = newGrid();
 				debounce = false;
