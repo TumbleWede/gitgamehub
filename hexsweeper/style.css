@@ -1,8 +1,36 @@
+html, body {
+	margin: 0;
+	padding: 0;
+	background-image: url("https://gitgamehub.netlify.app/hexsweeper/assets/bg.png");
+	background-size: 50px;
+}
+
 canvas {
 	position: absolute;
 	margin: auto;
 	left: 0;
 	right: 0;
-	top: 0;
-	bottom: 0;
+}
+
+h1 {
+	font-family: Trebuchet MS;
+	font-size: 10vh;
+	text-align: center;
+	margin: 3vh;
+	padding: 0;
+}
+
+div {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	margin: 0;
+	padding: 0;
+}
+
+button {
+	margin: auto 0.5vw;
+	padding: 0 1vw;
+	height: 10vh;
+	max-height: 30px;
 }
