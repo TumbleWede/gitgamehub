@@ -11,8 +11,8 @@ function loadImage(url) {
 	return img;
 }
 
-const hidden = loadImage("https://gitgamehub.netlify.app/hexsweeper/assets/hidden.png");
-const revealed = loadImage("https://gitgamehub.netlify.app/hexsweeper/assets/revealed.png");
+const hidden = loadImage("assets/hidden.png");
+const revealed = loadImage("assets/revealed.png");
 
 let grid = [];
 let rows = 10, cols = 8, mineCount = 10;
