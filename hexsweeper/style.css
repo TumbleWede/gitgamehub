@@ -1,4 +1,4 @@
-html, body {
+html {
 	margin: 0;
 	padding: 0;
 	background-image: url("assets/bg.png");
@@ -16,6 +16,7 @@ h1 {
 	font-family: Trebuchet MS;
 	font-size: 10vh;
 	text-align: center;
+	color: white;
 	margin: 3vh;
 	padding: 0;
 }
