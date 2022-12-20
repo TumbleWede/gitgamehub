@@ -10,13 +10,13 @@ canvas {
 	margin: auto;
 	left: 0;
 	right: 0;
+	top: 20vh;
+	bottom: 2vh;
+	scale: 0.8;
 }
 
-h1 {
-	font-family: Trebuchet MS;
-	font-size: 10vh;
-	text-align: center;
-	color: white;
+#title {
+	height: 10vh;
 	margin: 3vh;
 	padding: 0;
 }
@@ -32,6 +32,6 @@ div {
 button {
 	margin: auto 0.5vw;
 	padding: 0 1vw;
-	height: 10vh;
-	max-height: 30px;
+	height: 5vh;
+	font-size: 2vh;
 }

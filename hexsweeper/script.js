@@ -28,12 +28,12 @@ window.onresize = updateWindow;
 function lerp(a, b, t) {return a + (b - a) * t;}
 
 function updateWindow() {
-	if (window.innerWidth / window.innerHeight < canvas.width / (canvas.height / 0.8)) {
+	if (window.innerWidth / window.innerHeight < canvas.width / canvas.height) {
 		canvas.style.width = "100%";
 		canvas.style.height = null;
 	} else {
 		canvas.style.width = null;
-		canvas.style.height = "80vh";
+		canvas.style.height = "100%";
 	}
 }
 
