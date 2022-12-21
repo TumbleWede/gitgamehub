@@ -341,7 +341,7 @@ function update(time) {
 					ctx.fillStyle = "black";
 					ctx.fillText("X", x * 172 + 172, y * 150 + 100);
 				}
-				if (gameOver && isMine(x, y)) {
+				if (gameOver && isMine(x, y) && grid[x][y].state == 0) {
 					ctx.fillStyle = "red";
 					ctx.fillText("X", x * 172 + 172, y * 150 + 100);
 				}
