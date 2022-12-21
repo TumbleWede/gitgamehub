@@ -164,22 +164,18 @@ document.addEventListener("keydown", e => {
 				if (e.code == "KeyW" || e.code == "ArrowUp") {
 					if (inBounds(x, y + 1)) {
 						slide(x, y + 1, 0, -1, 1);
-						return;
 					}
 				} else if (e.code == "KeyA" || e.code == "ArrowLeft") {
 					if (inBounds(x + 1, y)) {
 						slide(x + 1, y, -1, 0, 1);
-						return;
 					}
 				} else if (e.code == "KeyS" || e.code == "ArrowDown") {
 					if (inBounds(x, y - 1)) {
 						slide(x, y - 1, 0, 1, 1);
-						return;
 					}
 				} else if (e.code == "KeyD" || e.code == "ArrowRight") {
 					if (inBounds(x - 1, y)) {
 						slide(x - 1, y, 1, 0, 1);
-						return;
 					}
 				}
 				
