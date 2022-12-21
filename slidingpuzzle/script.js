@@ -145,7 +145,64 @@ canvas.onclick = (event) => {
 		localStorage.sp_g = JSON.stringify(grid);
 		localStorage.sp_s = size;
 	}
+};
+
+function getMissingCell() {
+	for (let i = 0; i < size; i++) {
+		for (let i = 0; i < size; j++) {
+			if (!grid[y][x]) {
+				return x, y;
+			}
+		}
+	}
 }
+
+document.addEventListener("keydown", e => {
+	for (let y = 0; y < size; y++) {
+		for (let x = 0; x < size; x++) {
+			if (!grid[y][x]) {
+				if (e.code == "KeyW" || e.code == "ArrowUp") {
+					if (inBounds(x, y + 1)) {
+						slide(x, y + 1, 0, -1, 1);
+						return;
+					}
+				} else if (e.code == "KeyA" || e.code == "ArrowLeft") {
+					if (inBounds(x + 1, y)) {
+						slide(x + 1, y, -1, 0, 1);
+						return;
+					}
+				} else if (e.code == "KeyS" || e.code == "ArrowDown") {
+					if (inBounds(x, y - 1)) {
+						slide(x, y - 1, 0, 1, 1);
+						return;
+					}
+				} else if (e.code == "KeyD" || e.code == "ArrowRight") {
+					if (inBounds(x - 1, y)) {
+						slide(x - 1, y, 1, 0, 1);
+						return;
+					}
+				}
+				
+				if (solved()) {
+					debounce = false;
+					setTimeout(() => {
+						size = Math.min(size + 1, 10);
+						grid = newGrid();
+						solvedGrid = newGrid();
+						debounce = false;
+						loading = true;
+						j = 0
+						updateWindow();
+						scrambleGrid(size - 1, size - 1);
+					}, 1000);
+				}
+
+				localStorage.sp_g = JSON.stringify(grid);
+				localStorage.sp_s = size;
+			}
+		}
+	}
+});
 
 function update(time) {
 	deltaTime = (time - last) / 1000;
