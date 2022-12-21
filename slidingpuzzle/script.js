@@ -161,7 +161,7 @@ document.addEventListener("keydown", e => {
 	let br = false;
 	
 	for (let y = 0; y < size; y++) {
-		if (br) {return;}
+		if (br) {break;}
 		
 		for (let x = 0; x < size; x++) {
 			if (!grid[y][x]) {
