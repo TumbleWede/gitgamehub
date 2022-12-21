@@ -164,40 +164,44 @@ document.addEventListener("keydown", e => {
 				if (e.code == "KeyW" || e.code == "ArrowUp") {
 					if (inBounds(x, y + 1)) {
 						slide(x, y + 1, 0, -1, 1);
+						break;
 					}
 				} else if (e.code == "KeyA" || e.code == "ArrowLeft") {
 					if (inBounds(x + 1, y)) {
 						slide(x + 1, y, -1, 0, 1);
+						break;
 					}
 				} else if (e.code == "KeyS" || e.code == "ArrowDown") {
 					if (inBounds(x, y - 1)) {
 						slide(x, y - 1, 0, 1, 1);
+						break;
 					}
 				} else if (e.code == "KeyD" || e.code == "ArrowRight") {
 					if (inBounds(x - 1, y)) {
 						slide(x - 1, y, 1, 0, 1);
+						break;
 					}
 				}
-				
-				if (solved()) {
-					debounce = false;
-					setTimeout(() => {
-						size = Math.min(size + 1, 10);
-						grid = newGrid();
-						solvedGrid = newGrid();
-						debounce = false;
-						loading = true;
-						j = 0
-						updateWindow();
-						scrambleGrid(size - 1, size - 1);
-					}, 1000);
-				}
-
-				localStorage.sp_g = JSON.stringify(grid);
-				localStorage.sp_s = size;
 			}
 		}
 	}
+	
+	if (solved()) {
+		debounce = false;
+		setTimeout(() => {
+			size = Math.min(size + 1, 10);
+			grid = newGrid();
+			solvedGrid = newGrid();
+			debounce = false;
+			loading = true;
+			j = 0
+			updateWindow();
+			scrambleGrid(size - 1, size - 1);
+		}, 1000);
+	}
+
+	localStorage.sp_g = JSON.stringify(grid);
+	localStorage.sp_s = size;
 });
 
 function update(time) {
