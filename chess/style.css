@@ -1,0 +1,23 @@
+body {
+	margin: 0;
+	padding: 0;
+	background: #202020;
+}
+
+#game {
+	position: absolute;
+	margin: auto;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	scale: 0.9;
+	aspect-ratio: 1;
+}
+
+#board {
+	width: 100%;
+	height: 100%;
+	image-rendering: pixelated;
+	image-rendering: -webkit-optimize-contrast;
+}
