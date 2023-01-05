@@ -3,7 +3,6 @@ body {
 	background-image: url("bg.png");
 	background-position-x: center;
 	image-rendering: pixelated;
-	image-rendering: -webkit-optimize-contrast;
 }
 
 canvas {
