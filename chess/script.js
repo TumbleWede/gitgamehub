@@ -32,9 +32,6 @@ for (let i = 0; i < 8; i++) {
 		const div = document.createElement("div");
 		div.id = letters[i] + (8 - j);
 		div.className = "square";
-		div.style.position = "absolute";
-		div.style.width = "12.5%";
-		div.style.height = "12.5%";
 		div.style.left = i * 12.5 + "%";
 		div.style.top = j * 12.5 + "%";
 		div.dataset.background = (i + j) % 2 == 0 ? "#ffebcc" : "#ad884c";

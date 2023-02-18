@@ -15,7 +15,7 @@
 				background: #0f0f0f;
 			}
 
-			a, h1 {
+			a, .header {
 				font-size: 30px;
 				font-family: "Courier Prime Code";
 				color: white;
@@ -34,7 +34,7 @@
 				color: lightgrey;
 			}
 
-			h1 {
+			.header {
 				font-size: 40px;
 				margin: auto 8px;
 			}
@@ -53,18 +53,18 @@
 	<body>
 		<div id="logo">
 			<img src="assets/logo.png">
-			<h1 class="typing">Git Game Hub</h1>
+			<a class="typing header" href="https://github.com/TumbleWede/gitgamehub" target="_blank">Git Game Hub</a>
 		</div>
 		<div>
-			<a href="pong" class="typing">Pong</a><br>
-			<a href="tetrabattle" class="typing">Tetra Battle</a><br>
-			<a href="four_in_a_row" class="typing">Four In A Row</a><br>
+			<a href="pong/" class="typing">Pong</a><br>
+			<a href="tetrabattle/" class="typing">Tetra Battle</a><br>
+			<a href="four_in_a_row/" class="typing">Four In A Row</a><br>
 			<a href="https://en.wikipedia.org/wiki/Connect_Four" target="_blank" class="typing sub">How to Play</a><br>
-			<a href="reversi" class="typing">Reversi/Othello</a><br>
+			<a href="reversi/" class="typing">Reversi/Othello</a><br>
 			<a href="https://en.wikipedia.org/wiki/Reversi" target="_blank" class="typing sub">How to Play</a><br>
-			<a href="slidingpuzzle" class="typing">Sliding Puzzle</a><br>
-			<a href="hexsweeper" class="typing">Hexsweeper</a><br>
-			<a href="chess" class="typing">Chess (Pass and Play)</a><br>
+			<a href="slidingpuzzle/" class="typing">Sliding Puzzle</a><br>
+			<a href="hexsweeper/" class="typing">Hexsweeper</a><br>
+			<a href="chess/" class="typing">Chess (Pass and Play)</a><br>
 			<a href="chess/?flipPieces=true" class="typing sub">Chess (Flip pieces)</a><br>
 			<a href="https://www.chess.com/learn-how-to-play-chess" target="_blank" class="typing sub">How to Play</a><br>
 		</div>
@@ -73,7 +73,7 @@
 				if (i == 0) {element.innerHTML = "";}
 				if (i < text.length) {
 					element.innerHTML += text.charAt(i);
-					i++
+					i++;
 					setTimeout(() => {typeWriter(element, text, i);}, 20);
 				}
 			}
