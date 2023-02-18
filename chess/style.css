@@ -5,6 +5,12 @@ html, body {
 	-webkit-user-select: none; /* Safari */
 	-ms-user-select: none; /* IE 10 and IE 11 */
 	user-select: none; /* Standard syntax */
+	overflow: hidden;
+}
+
+.square {
+	box-shadow: inset 0 0 min(1vw, 1vh) rgba(0, 0, 0, 0.25);
+	transition: 0.2s;
 }
 
 #game {
@@ -15,13 +21,23 @@ html, body {
 	top: 0;
 	bottom: 0;
 	aspect-ratio: 1;
+	box-shadow: 0 0 min(10vw, 10vh) rgba(0, 0, 0, 0.5);
 }
 
 #board {
+	position: absolute;
 	width: 100%;
 	height: 100%;
 	font-size: 2%;
 	aspect-ratio: 1;
+}
+
+#moves {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	aspect-ratio: 1;
+	pointer-events: none;
 }
 
 p {
@@ -29,4 +45,28 @@ p {
 	margin: 0;
 	font-size: min(2vw, 2vh);
 	font-family: Arial;
+}
+
+#gameOver {
+	font-size: min(10vw, 10vh);
+	width: 100%;
+	height: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	color: white;
+	font-weight: bold;
+	--stroke-color: #ad884c;
+	--stroke-width: min(0.25vw, 0.25vh);
+	color: white;
+	text-shadow:
+		var(--stroke-width) 0 0 var(--stroke-color),
+		calc(var(--stroke-width) * -1) 0 0 var(--stroke-color),
+		0 var(--stroke-width) 0 var(--stroke-color),
+		0 calc(var(--stroke-width) * -1) 0 var(--stroke-color),
+		var(--stroke-width) var(--stroke-width) 0 var(--stroke-color),
+		calc(var(--stroke-width) * -1) calc(var(--stroke-width) * -1) 0 var(--stroke-color),
+		calc(var(--stroke-width) * -1) var(--stroke-width) 0 var(--stroke-color),
+		var(--stroke-width) calc(var(--stroke-width) * -1) 0 var(--stroke-color);
+	pointer-events: none;
 }
