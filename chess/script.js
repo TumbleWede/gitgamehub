@@ -168,8 +168,6 @@ const pieces = {
 };
 
 function isOccupied(x, y) {
-	const otherKing = document.getElementById("K" + (currentMove == "white" ? "black" : "white"));
-	if (otherKing.dataset.x == x && otherKing.dataset.y == y) {return false;}
 	for (let i = pieces.white.length - 1; i >= 0; i--) {
 		if (pieces.white[i].dataset.x == x && pieces.white[i].dataset.y == y) {
 			return pieces.white[i];
@@ -246,7 +244,7 @@ function getMoves(piece) {
 					moves.push(getSquare(x, y + j * k));
 
 					if (isOccupied(x, y + j * k)) {
-						if (isOccupied(x, y + j * k).dataset.color == piece.dataset.color) {
+						if (!isValid(piece, x, y + j * k)) {
 							moves.pop();
 						}
 						break;
@@ -261,7 +259,7 @@ function getMoves(piece) {
 					moves.push(getSquare(x + j * k, y));
 
 					if (isOccupied(x + j * k, y)) {
-						if (isOccupied(x + j * k, y).dataset.color == piece.dataset.color) {
+						if (!isValid(piece, x + j * k, y)) {
 							moves.pop();
 						}
 						break;
@@ -280,7 +278,7 @@ function getMoves(piece) {
 					moves.push(getSquare(x + j * k, y + j * k));
 
 					if (isOccupied(x + j * k, y + j * k)) {
-						if (isOccupied(x + j * k, y + j * k).dataset.color == piece.dataset.color) {
+						if (!isValid(piece, x + j * k, y + j * k)) {
 							moves.pop();
 						}
 						break;
@@ -295,7 +293,7 @@ function getMoves(piece) {
 					moves.push(getSquare(x - j * k, y + j * k));
 
 					if (isOccupied(x - j * k, y + j * k)) {
-						if (isOccupied(x - j * k, y + j * k).dataset.color == piece.dataset.color) {
+						if (!isValid(piece, x - j * k, y + j * k)) {
 							moves.pop();
 						}
 						break;
@@ -315,7 +313,7 @@ function getMoves(piece) {
 						moves.push(getSquare(x + i * k, y + j * k));
 
 						if (isOccupied(x + i * k, y + j * k)) {
-							if (isOccupied(x + i * k, y + j * k).dataset.color == piece.dataset.color) {
+							if (!isValid(piece, x + i * k, y + j * k)) {
 								moves.pop();
 							}
 							break;
