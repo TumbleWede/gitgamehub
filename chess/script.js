@@ -168,7 +168,7 @@ const pieces = {
 };
 
 function isOccupied(x, y) {
-	const otherKing = document.getElementById("K" + currentMove);
+	const otherKing = document.getElementById("K" + (currentMove == "white" ? "black" : "white"));
 	if (otherKing.dataset.x == x && otherKing.dataset.y == y) {return false;}
 	for (let i = pieces.white.length - 1; i >= 0; i--) {
 		if (pieces.white[i].dataset.x == x && pieces.white[i].dataset.y == y) {
@@ -379,6 +379,14 @@ function check(piece, x, y) {
 	piece.dataset.x = x2;
 	piece.dataset.y = y2;
 	return false;
+}
+
+function debug() {
+	document.getElementById("Kblack").dataset.x = 4;
+	const moves = getMoves(document.getElementById("bwhite"));
+	for (let i = 0; i < moves.length; i++) {
+		moves[i].style.opacity = 0.5;
+	}
 }
 
 document.onmousemove = e => {
