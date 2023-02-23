@@ -20,7 +20,7 @@ function updateWindow() {
 }
 
 let currentMove = "white";
-let currentPiece;
+let currentPiece, previousPiece;
 let toggleSelect = false;
 let mouseDown = false;
 let isWin = false;
@@ -214,10 +214,10 @@ function getMoves(piece) {
 		if (isValid(piece, x + 1, y + dir) && isOccupied(x + 1, y + dir)) { // Attack right
 			moves.push(getSquare(x + 1, y + dir));
 		}
-		if (isValid(piece, x - 1, y + dir) && isOccupied(x - 1, y) && isOccupied(x - 1, y).dataset.moves == 1 && (y == 3 || y == 4)) { // ℰ𝓃 𝒫𝒶𝓈𝓈𝒶𝓃𝓉 left
+		if (isValid(piece, x - 1, y + dir) && isOccupied(x - 1, y) && isOccupied(x - 1, y).dataset.moves == 1 && isOccupied(x - 1, y) == previousPiece && (y == 3 || y == 4)) { // ℰ𝓃 𝒫𝒶𝓈𝓈𝒶𝓃𝓉 left
 			moves.push(getSquare(x - 1, y + dir));
 		}
-		if (isValid(piece, x + 1, y + dir) && isOccupied(x + 1, y) && isOccupied(x + 1, y).dataset.moves == 1 && (y == 3 || y == 4)) { // ℰ𝓃 𝒫𝒶𝓈𝓈𝒶𝓃𝓉 right
+		if (isValid(piece, x + 1, y + dir) && isOccupied(x + 1, y) && isOccupied(x + 1, y).dataset.moves == 1 && isOccupied(x + 1, y) == previousPiece && (y == 3 || y == 4)) { // ℰ𝓃 𝒫𝒶𝓈𝓈𝒶𝓃𝓉 right
 			moves.push(getSquare(x + 1, y + dir));
 		}
 	} else if (piece.className == "knight") {
@@ -442,6 +442,7 @@ document.onmouseup = e => {
 			currentPiece.dataset.moves++;
 			currentPiece.style.zIndex = "0";
 			currentMove = currentMove == "white" ? "black" : "white";
+			previousPiece = currentPiece;
 			
 			// Check for captures
 			const list = currentPiece.dataset.color == "black" ? pieces.white : pieces.black;
