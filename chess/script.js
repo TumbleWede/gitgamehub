@@ -379,14 +379,6 @@ function check(piece, x, y) {
 	return false;
 }
 
-function debug() {
-	document.getElementById("Kblack").dataset.x = 4;
-	const moves = getMoves(document.getElementById("bwhite"));
-	for (let i = 0; i < moves.length; i++) {
-		moves[i].style.opacity = 0.5;
-	}
-}
-
 document.onmousemove = e => {
 	if (currentPiece && mouseDown) {
 		currentPiece.style.transition = "0s";
