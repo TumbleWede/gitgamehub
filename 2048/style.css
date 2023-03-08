@@ -1,0 +1,67 @@
+html, body {
+	margin: 0;
+	padding: 0;
+	background: #202020;
+	overflow: hidden;
+}
+
+#game {
+	background: #404040;
+	position: absolute;
+	margin: auto;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	aspect-ratio: 1;
+	box-shadow: 0 0 8vmin rgba(0, 0, 0, 0.25);
+	scale: 0.9;
+	border-radius: 2vmin;
+}
+
+#container {
+	scale: 0.98;
+	width: 100%;
+	height: 100%;
+}
+
+@keyframes init {
+	from {
+		scale: 0;
+	} to {
+		scale: 0.9;
+	}
+}
+
+.cell, .tile {
+	background: #606060;
+	position: absolute;
+	width: 25%;
+	height: 25%;
+	scale: 0.9;
+	border-radius: 1vmin;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	font-family: arial;
+	transition: 0.2s;
+	animation: 0.2s init;
+	z-index: 1;
+}
+
+h1 {
+	position: absolute;
+	margin: 0;
+	display: flex;
+	color: white;
+	width: 100%;
+	height: 100%;
+	justify-content: center;
+	align-items: center;
+	font-size: 15vmin;
+	font-family: arial;
+	font-weight: bold;
+	-webkit-text-stroke: 0.3vmin black;
+	scale: 0;
+	transition: 0.35s;
+}
