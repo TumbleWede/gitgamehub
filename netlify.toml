@@ -1,5 +1,5 @@
 [[headers]]
-for = "/godot-game/*"
+for = "/gear-fortress/*"
 
 [headers.values]
 Cross-Origin-Opener-Policy = "same-origin"
