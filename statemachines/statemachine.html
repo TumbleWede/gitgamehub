@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Draggable Order Game</title>
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+				padding: 20px;
+				background: #0b0e11;
+				margin: 0;
+				padding: 0;
+				color: white;
+				text-align: center;
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+			}
+			#container {
+				display: flex;
+				flex-direction: column;
+				width: 1000px;
+				margin: auto;
+			}
+			.item {
+				padding: 10px;
+				background-color: rgba(255, 255, 255, 0.25);
+				border: 1px solid #fff;
+				cursor: move;
+				border-radius: 8px;
+				font-size: 20px;
+				font-family: monospace;
+				font-weight: bolder;
+				margin: 2px 0;
+				text-align: left;
+			}
+			.correct {
+				background-color: rgba(0, 255, 0, 0.25);
+			}
+			.wrong {
+				background-color: rgba(255, 0, 0, 0.25);
+			}
+
+			button {
+				font-size: 30px;
+				margin: 20px;
+				border-radius: 8px;
+				background: rgba(255, 255, 255, 0.25);
+				border: 1px solid white;
+				color: white;
+				padding: 10px 40px;
+				cursor: pointer;
+				transition: 0.2s;
+			}
+
+			button:hover {
+				scale: 1.1;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>Order State Machine Design Steps</h1>
+		<h3>First Step</h3>
+		<div id="container"></div>
+		<h3>Last Step</h3>
+		<div id="buttons">
+			<button onclick="checkOrder()">Submit</button>
+			<button onclick="shuffle()">Shuffle</button>
+		</div>
+
+		<script>
+			const container = document.getElementById("container");
+			const originalItems = [
+				"Create a state machine diagram",
+				"Define each state of the system",
+				"Draw each state as a circle separated with enough space to draw connecting arrows",
+				"Define how the system holds in each state and transitions from one state to the next",
+				"Determine the number of state variables needed",
+				"Add state variables to each state",
+				"Add inputs, state variables, and arrows to the state machine diagram",
+				"Label outputs and encode outputs to states",
+				"Create a state transition table from the state machine diagram",
+				"Use the state transition table to write and simplify design equations",
+				"Design and test the circuit"
+			];
+
+			let shuffledItems = [...originalItems];
+			let draggedItem = null;
+
+			function shuffle() {
+				shuffledItems.sort(() => Math.random() - 0.5);
+				container.innerHTML = "";
+
+				shuffledItems.forEach((text) => {
+					container.appendChild(createDraggableItem(text));
+				});
+			}
+			shuffle();
+
+			function createDraggableItem(text) {
+				const div = document.createElement("div");
+				div.className = "item";
+				div.draggable = true;
+				div.textContent = text;
+				addDragHandlers(div);
+				return div;
+			}
+
+			function addDragHandlers(item) {
+				function dragstart() {
+					draggedItem = item;
+				}
+				function dragover(e) {
+					e.preventDefault();
+				}
+
+				function drop() {
+					if (draggedItem && draggedItem !== item) {
+						const draggedIndex = [...container.children].indexOf(
+							draggedItem
+						);
+						const targetIndex = [...container.children].indexOf(
+							item
+						);
+
+						if (draggedIndex < targetIndex) {
+							container.insertBefore(
+								draggedItem,
+								item.nextSibling
+							);
+						} else {
+							container.insertBefore(draggedItem, item);
+						}
+					}
+				}
+
+				item.addEventListener("dragstart", dragstart);
+				item.addEventListener("dragover", dragover);
+				item.addEventListener("drop", drop);
+			}
+
+			function checkOrder() {
+				[...container.children].forEach((item, index) => {
+					if (item.textContent === originalItems[index]) {
+						item.className = "item correct";
+					} else {
+						item.className = "item wrong";
+					}
+				});
+			}
+		</script>
+	</body>
+</html>
