@@ -2,7 +2,7 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
-		<title>Draggable Order Game</title>
+		<title>Order in the Sort</title>
 		<style>
 			body {
 				font-family: Arial, sans-serif;
@@ -21,7 +21,7 @@
 			#container {
 				display: flex;
 				flex-direction: column;
-				max-width: 1000px;
+				max-width: 500px;
 				width: calc(100% - 8px);
 				margin: auto;
 			}
@@ -31,7 +31,7 @@
 				border: 1px solid #fff;
 				cursor: move;
 				border-radius: 8px;
-				font-size: 20px;
+				font-size: 15px;
 				font-family: monospace;
 				font-weight: bolder;
 				margin: 2px 10px;
@@ -84,10 +84,10 @@
 		</style>
 	</head>
 	<body>
-		<h1>Order State Machine Design Steps</h1>
-		<h3>First Step</h3>
+		<h1>Java Order Precedence</h1>
+		<h3>Highest Precedence</h3>
 		<div id="container"></div>
-		<h3>Last Step</h3>
+		<h3>Lowest Precedence</h3>
 		<div id="buttons">
 			<button onclick="checkOrder()">Submit</button>
 			<button onclick="shuffle()">Shuffle</button>
@@ -95,24 +95,42 @@
 
 		<script>
 			const container = document.getElementById("container");
-			const originalItems = [
-				"Create a state machine diagram",
-				"Define each state of the system",
-				"Draw each state as a circle separated with enough space to draw connecting arrows",
-				"Define how the system holds in each state and transitions from one state to the next",
-				"Determine the number of state variables needed",
-				"Add state variables to each state",
-				"Add inputs, state variables, and arrows to the state machine diagram",
-				"Label outputs and encode outputs to states",
-				"Create a state transition table from the state machine diagram",
-				"Use the state transition table to write and simplify design equations",
-				"Design and test the circuit"
-			];
+			const precedence = [
+				["()", "[]", "new", ".", "::"],
+				["x++", "x--"],
+				["-x", "+x", "!", "~", "++x", "--x"],
+				["(int)"],
+				["*", "/", "%"],
+				["+", "-"],
+				["<<", ">>", ">>>"],
+				["<", "<=", ">", ">=", "instanceof"],
+				["==", "!="],
+				["&"],
+				["^"],
+				["|"],
+				["&&"],
+				["||"],
+				["x ? y : z"],
+				["=", "+=", "-=", "*=", "/=", "%=", "&=", "^=", "|=", "<<=", ">>=", ">>>="],
+				["->"]
+			]
+			const params = new URLSearchParams(window.location.search);
+			const size = Math.min(Math.max(parseInt(params.get("size")), 2), precedence.length) || precedence.length;
+			
+			function getOriginalItems() {
+				const items = [];
+				for (const op of precedence)
+					items.push(op[Math.floor(Math.random() * op.length)]);
+				while (items.length > size) items.splice(Math.floor(Math.random() * items.length), 1);
+				return items;
+			}
 
-			let shuffledItems = [...originalItems];
+			let originalItems, shuffledItems;
 			let draggedItem = null;
 
 			function shuffle() {
+				originalItems = getOriginalItems();
+				shuffledItems = [...originalItems];
 				shuffledItems.sort(() => Math.random() - 0.5);
 				container.innerHTML = "";
 
