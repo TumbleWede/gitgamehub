@@ -1,0 +1,18 @@
+body {
+	background: black;
+}
+
+#canvas {
+	box-shadow: 0 0 8px white;
+	aspect-ratio: 256 / 224;
+	position: absolute;
+	margin: auto;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	image-rendering: pixelated;
+	font-smooth: never;
+	-webkit-font-smoothing: none;
+	
+}
